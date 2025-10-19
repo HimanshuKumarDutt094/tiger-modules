@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { mkdirpSync, writeFileSync, writeJsonSync } from "fs-extra";
 import path from "node:path";
-import { text, cancel, isCancel } from "@clack/prompts";
+import { text, cancel, isCancel, log } from "@clack/prompts";
 import chalk from "chalk";
 import { existsSync } from "node:fs";
 
@@ -15,9 +15,14 @@ async function main() {
   const moduleName = await text({
     message: "Module name (e.g. LynxStorage):",
     validate(value) {
-      if (value.length === 0) return "Module name is required.";
-      if (pascalCheck(value))
+      const res = pascalCheck(value);
+      if (value.length === 0) {
+        return "Module name is required.";
+      } else if (res === false) {
         return "Invalid Module name, it must be PascalCase";
+      } else if (value.endsWith("Module")) {
+        return "Do not add 'Module' suffix, it'll be added by cli";
+      }
     },
   });
 
@@ -56,7 +61,13 @@ async function main() {
   mkdirpSync(dir);
 
   // --- Folder structure ---
-  const folders = ["src", "android", "ios", "codegen"];
+  const androidLocation = packageName.split(".");
+  const folders = [
+    "src",
+    "ios",
+    "codegen",
+    `android/src/main/java/${packageName.replaceAll(".", "/")}`,
+  ];
   folders.forEach((folder) => mkdirpSync(path.join(dir, folder)));
 
   // --- Package.json ---
@@ -78,10 +89,17 @@ async function main() {
 }
 `
   );
-
   // --- Android stub ---
   writeFileSync(
-    path.join(dir, "android", `${moduleName}Module.kt`),
+    path.join(
+      dir,
+      "android",
+      "src",
+      "main",
+      "java",
+      ...androidLocation,
+      `${moduleName}Module.kt`
+    ),
     `package ${packageName}
 
 import com.lynx.jsbridge.LynxMethod
