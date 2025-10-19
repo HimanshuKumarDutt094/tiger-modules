@@ -2,6 +2,7 @@ import { Project } from "ts-morph";
 import fs from "fs";
 import path from "path";
 import { config } from "./module.config";
+import { convertType } from "./util";
 
 // --- Load TS source ---
 const project = new Project();
@@ -55,18 +56,17 @@ fs.mkdirSync(path.dirname(ktFile), { recursive: true });
 
 const ktMethods = methods
   .map((m) => {
-    let params = m.params
-      .replace(/: string/g, ": String")
-      .replace(/: number/g, ": Double")
-      .replace(/: boolean/g, ": Boolean")
-      .replace(/: \([^\)]*\) => void/g, ": Callback");
+    const params = m.params
+      ? m.params
+          .split(",")
+          .map((p) => {
+            const [name, type] = p.split(":").map((x) => x.trim());
+            return `${name}: ${convertType(type, "kotlin")}`;
+          })
+          .join(", ")
+      : "";
 
-    let returnType = m.returnType
-      .replace("string", "String")
-      .replace("number", "Double")
-      .replace("boolean", "Boolean")
-      .replace(/void/, "Unit");
-
+    const returnType = convertType(m.returnType, "kotlin");
     return `  @LynxMethod
   fun ${m.name}(${params})${returnType !== "Unit" ? `: ${returnType}` : ""} {
     TODO()
@@ -129,47 +129,19 @@ ${methodLookupEntries}
         ]
     }
 
-    private let localStorage: UserDefaults
-    private static let storageKey = "MyLocalStorage"
-
-    public init(param: Any) {
-        guard let suite = UserDefaults(suiteName: ${moduleName}Module.storageKey) else {
-            fatalError("Failed to initialize UserDefaults with suiteName: \\(${moduleName}Module.storageKey)")
-        }
-        localStorage = suite
-        super.init()
-    }
-
-    public override init() {
-        guard let suite = UserDefaults(suiteName: ${moduleName}Module.storageKey) else {
-            fatalError("Failed to initialize UserDefaults with suiteName: \\(${moduleName}Module.storageKey)")
-        }
-        localStorage = suite
-        super.init()
-    }
-
 ${methods
   .map((m) => {
     const tsParams = m.params ? m.params.split(",").map((p) => p.trim()) : [];
     const swiftParams = tsParams
       .map((p, i) => {
         const [name, type] = p.split(":").map((x) => x.trim());
-        const safeType = type ? type : "Any";
-        let swiftType = safeType
-          .replace("string", "String")
-          .replace("number", "Double")
-          .replace("boolean", "Bool");
-        if (/Callback/.test(swiftType)) swiftType = "(NSString) -> Void";
+        const safeType = type ?? "Any";
+        const swiftType = convertType(safeType, "swift");
         return `${name}${i === 0 ? "" : "_"}: ${swiftType}`;
       })
       .join(", ");
 
-    let returnType = m.returnType
-      .replace("string", "String")
-      .replace("number", "Double")
-      .replace("boolean", "Bool")
-      .replace(/void/, "Void");
-
+    const returnType = convertType(m.returnType, "swift");
     return `    func ${m.name}(${swiftParams})${
       returnType !== "Void" ? ` -> ${returnType}` : ""
     } {
