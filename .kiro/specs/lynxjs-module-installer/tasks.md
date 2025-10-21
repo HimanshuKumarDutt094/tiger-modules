@@ -1,0 +1,192 @@
+# Implementation Plan
+
+- [x] 1. Update init command to include config in tsdown entry points
+  - Modify init.ts to generate tsdown.config.ts with config entry point
+  - Ensure generated tsdown.config includes both index and config in entry object
+  - _Requirements: 1.5_
+
+- [x] 2. Improve build command for robust distribution
+  - [x] 2.1 Update build.ts to handle compiled config.js
+    - Verify tsdown compiles module.config.ts to dist/config.js
+    - Add logging for config compilation status
+    - _Requirements: 3.1, 3.2_
+  
+  - [x] 2.2 Enhance directory copying with better error handling
+    - Add existence checks before copying android/ and ios/
+    - Log detailed copy operations for debugging
+    - Handle edge cases (empty directories, symlinks)
+    - _Requirements: 3.2_
+  
+  - [x] 2.3 Copy TypeScript declaration files to dist/
+    - Find and copy {ModuleName}Module.d.ts files to dist/
+    - Update package.json exports to include type declarations
+    - _Requirements: 3.5_
+  
+  - [x] 2.4 Improve dist/package.json generation
+    - Ensure files array includes all necessary files
+    - Set correct main/module/types paths
+    - Add proper exports map for all entry points
+    - _Requirements: 3.4, 3.5_
+
+- [x] 3. Implement iOS file copying in installer
+  - [x] 3.1 Create copyIOSSources function
+    - Use fast-glob to find Swift and Objective-C files in ios/modules
+    - Search both moduleDir/ios and moduleDir/dist/ios
+    - Find host iOS/apple directories using glob patterns
+    - Copy files to host modules/ subdirectory
+    - Implement idempotency check (skip if content identical)
+    - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
+  
+  - [x] 3.2 Integrate copyIOSSources into main install function
+    - Call copyIOSSources after Android integration
+    - Pass moduleName from config
+    - Add error handling and logging
+    - _Requirements: 7.1, 7.2, 7.3_
+
+- [x] 4. Improve config loading in installer
+  - [x] 4.1 Update readModuleConfig to prioritize dist/config.js
+    - Try importing dist/config.js first (compiled by tsdown)
+    - Use dynamic import for ES modules
+    - Remove regex parsing of .ts files
+    - Keep fallback to package.json
+    - _Requirements: 4.2, 4.3, 11.1, 11.2, 11.3_
+  
+  - [x] 4.2 Add better error messages for config loading
+    - Log each config file attempt
+    - Show which file was successfully loaded
+    - Warn if falling back to package.json
+    - _Requirements: 10.2_
+
+- [ ] 5. Implement Swift registration patching
+  - [ ] 5.1 Create patchSwiftRegister function
+    - Search for Swift files containing registerModule or config.register
+    - Find last registration call in file
+    - Insert new registration after existing ones
+    - Check for existing module registration to avoid duplicates
+    - Use proper indentation matching existing code
+    - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
+  
+  - [ ] 5.2 Handle edge cases in Swift patching
+    - Handle files with no existing registrations
+    - Handle multiple registration blocks
+    - Preserve code formatting and comments
+    - _Requirements: 9.4, 9.5_
+
+- [ ] 6. Implement Objective-C registration patching
+  - [ ] 6.1 Create patchObjectiveCRegister function
+    - Search for .m files containing registerModule
+    - Detect if using Swift bridging header
+    - Add import statement if needed (non-Swift modules)
+    - Insert registerModule call after existing registrations
+    - Check for existing module registration to avoid duplicates
+    - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
+  
+  - [ ] 6.2 Handle Swift-Objective-C interop
+    - Detect Swift bridging header usage
+    - Skip .h import for Swift modules
+    - Add .h import for Objective-C modules
+    - _Requirements: 8.2, 8.3_
+
+- [ ] 7. Improve bridging header patching
+  - [ ] 7.1 Update patchBridgingHeader function
+    - Search for bridging header files
+    - Add Lynx/LynxModule.h import if missing
+    - Remove module-specific .h import (not needed for Swift modules)
+    - Handle case where no bridging header exists
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
+
+- [ ] 8. Create unified iOS registration function
+  - [ ] 8.1 Implement patchIOSRegistration function
+    - Call patchSwiftRegister for Swift projects
+    - Call patchObjectiveCRegister for Objective-C projects
+    - Call patchBridgingHeader if needed
+    - Handle errors gracefully for each step
+    - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
+  
+  - [ ] 8.2 Integrate patchIOSRegistration into main install function
+    - Replace existing iOS patching calls
+    - Add comprehensive logging
+    - Ensure idempotency across all iOS operations
+    - _Requirements: 12.3, 12.4, 12.5_
+
+- [ ] 9. Enhance error handling and logging
+  - [ ] 9.1 Add detailed logging throughout installer
+    - Log host root detection
+    - Log config loading attempts and results
+    - Log file search patterns and results
+    - Log copy operations (skipped vs performed)
+    - Log patch operations (applied vs skipped)
+    - _Requirements: 10.3, 10.4, 10.5_
+  
+  - [ ] 9.2 Improve error messages
+    - Provide actionable error messages
+    - Include file paths in error messages
+    - Suggest manual steps if automation fails
+    - _Requirements: 10.1, 10.2, 10.3_
+
+- [ ] 10. Ensure idempotency across all operations
+  - [ ] 10.1 Verify file copy idempotency
+    - Ensure copyFileIfDifferent works correctly
+    - Test with identical and different files
+    - _Requirements: 12.1, 12.2_
+  
+  - [ ] 10.2 Verify Android registration idempotency
+    - Test multiple installer runs
+    - Ensure no duplicate imports
+    - Ensure no duplicate registrations
+    - _Requirements: 12.3, 12.4, 12.5_
+  
+  - [ ] 10.3 Verify iOS registration idempotency
+    - Test multiple installer runs on Swift projects
+    - Test multiple installer runs on Objective-C projects
+    - Ensure no duplicate registrations
+    - Ensure bridging header not duplicated
+    - _Requirements: 12.3, 12.4, 12.5_
+
+- [ ] 11. Update package.json exports for lynxjs-module
+  - Ensure install.js is exported correctly
+  - Verify moduleInstaller.ts is compiled to dist/
+  - Update exports map to include "./install" path
+  - _Requirements: 3.3, 3.4_
+
+- [ ]* 12. Create comprehensive test suite
+  - [ ]* 12.1 Write unit tests for build command
+    - Test tsdown execution
+    - Test directory copying
+    - Test install.js generation
+    - Test package.json modification
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+  
+  - [ ]* 12.2 Write unit tests for iOS file copying
+    - Test copyIOSSources with various structures
+    - Test finding host iOS directories
+    - Test idempotency
+    - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
+  
+  - [ ]* 12.3 Write unit tests for iOS registration patching
+    - Test patchSwiftRegister
+    - Test patchObjectiveCRegister
+    - Test patchBridgingHeader
+    - Test duplicate detection
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 9.1, 9.2, 9.3, 9.4, 9.5_
+  
+  - [ ]* 12.4 Write integration tests for build process
+    - Test full build flow
+    - Verify dist/ structure
+    - Verify all files present
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+  
+  - [ ]* 12.5 Write integration tests for installer
+    - Test Android Kotlin integration
+    - Test Android Java integration
+    - Test iOS Swift integration
+    - Test iOS Objective-C integration
+    - Test idempotency for all platforms
+    - _Requirements: 4.1, 4.2, 5.1, 5.2, 5.3, 5.4, 5.5, 6.1, 6.2, 6.3, 6.4, 6.5, 7.1, 7.2, 7.3, 7.4, 7.5, 8.1, 8.2, 8.3, 8.4, 8.5, 9.1, 9.2, 9.3, 9.4, 9.5, 12.1, 12.2, 12.3, 12.4, 12.5_
+
+- [ ]* 13. Update documentation
+  - Update README with build and install flow
+  - Document module developer workflow
+  - Document host developer experience
+  - Add troubleshooting guide
+  - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
