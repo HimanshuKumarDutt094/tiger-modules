@@ -5,7 +5,7 @@
 ## Core Functionality
 
 - **Scaffolding**: Creates new LynxJS module projects with proper structure and configuration
-- **Code Generation**: Parses TypeScript interfaces extending `MyModuleGenerator` and generates:
+- **Code Generation**: Parses TypeScript interfaces extending `TigerModule` and generates:
   - TypeScript declaration files (.d.ts)
   - Kotlin modules for Android
   - Swift modules for iOS

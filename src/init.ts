@@ -76,7 +76,8 @@ export async function initModule(providedProjectName?: string, providedModuleNam
   writeFileSync(
     path.join(dir, moduleFile),
     `// ${moduleName} module interface
-export interface ${moduleName}Module extends MyModuleGenerator {
+    import {type TigerModule } from "lynxjs-module";
+export interface ${moduleName}Module extends TigerModule {
   helloWorld(name: string): string;
 }
 `

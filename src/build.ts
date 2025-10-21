@@ -3,6 +3,7 @@ import { spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import fg from "fast-glob";
+import { generateGlobalDts } from "./generate-types";
 
 async function copyDir(src: string, dest: string) {
   // Check if source exists
@@ -194,10 +195,18 @@ export default async function buildModule() {
   console.log("building module in", moduleDir);
   console.log("output directory:", distDir);
   
-  // 1. run tsdown to compile TS -> dist
+  // 1. run tsdown to compile TS -> dist (this clears dist first)
   runTsdown(moduleDir);
+  
+  // 2. Generate global.d.ts from TigerModule interface (after tsdown)
+  try {
+    generateGlobalDts(path.join(distDir, "global.d.ts"));
+    console.log("✓ generated global.d.ts for LynxJS binding");
+  } catch (err) {
+    console.warn("⚠ global.d.ts generation failed:", err instanceof Error ? err.message : err);
+  }
 
-  // 2. copy android and ios into dist with enhanced error handling
+  // 3. copy android and ios into dist with enhanced error handling
   const androidSrc = path.join(moduleDir, "android");
   const iosSrc = path.join(moduleDir, "ios");
   
@@ -215,7 +224,7 @@ export default async function buildModule() {
     console.warn("⚠ copy ios failed:", err instanceof Error ? err.message : err);
   }
 
-  // 3. copy TypeScript declaration files to dist
+  // 4. copy any additional TypeScript declaration files to dist
   try {
     await copyDeclarationFiles(moduleDir, distDir);
     console.log("✓ copied declaration files to dist/");
@@ -223,10 +232,10 @@ export default async function buildModule() {
     console.warn("⚠ copy declaration files failed:", err instanceof Error ? err.message : err);
   }
 
-  // 4. create dist/install.js that delegates to lynxjs-module install
+  // 5. create dist/install.js that delegates to lynxjs-module install
   await writeDistInstall(distDir);
 
-  // 5. write dist/package.json with postinstall
+  // 6. write dist/package.json with postinstall
   await writeDistPackageJson(moduleDir, distDir);
 
   console.log("\n✅ build finished for", moduleDir);

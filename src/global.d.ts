@@ -1,5 +1,9 @@
-// my-module-generator.d.ts
+// lynxjs-module global declarations
 /// <reference types="@lynx-js/types" />
-export interface MyModuleGenerator {
-  // Define common properties or methods here
+
+declare global {
+  // Make TigerModule available globally so users can access their modules directly
+  const TigerModule: <T extends import('./index').TigerModule>() => T;
 }
+
+export {};

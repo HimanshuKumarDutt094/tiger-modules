@@ -59,11 +59,11 @@ export async function runCodegen(): Promise<void> {
   const interfaceDecl = sourceFile
     .getInterfaces()
     .find((i) =>
-      i.getExtends().some((e) => e.getText() === "MyModuleGenerator")
+      i.getExtends().some((e) => e.getText() === "TigerModule")
     );
 
   if (!interfaceDecl)
-    throw new Error("No interface extending MyModuleGenerator");
+    throw new Error("No interface extending TigerModule");
 
   const methods = interfaceDecl.getMethods().map((m) => {
     const name = m.getName();
@@ -78,21 +78,7 @@ export async function runCodegen(): Promise<void> {
     return { name, params, returnType };
   });
 
-  // --- Generate d.ts ---
-  const dtsContent = `\n/// <reference types="@lynx-js/types" />\ndeclare global {\n  interface NativeModules {\n    ${interfaceDecl.getName()}: {\n${methods
-    .map((m) => {
-      const params = m.params
-        .map(
-          (p: any) => `${p.paramName}${p.isOptional ? "?" : ""}: ${p.typeText}`
-        )
-        .join(", ");
-      return `      ${m.name}(${params}): ${m.returnType};`;
-    })
-    .join("\n")}\n    };\n  }\n}\nexport {};\n`;
-  fs.writeFileSync(
-    path.join("./", `global.d.ts`),
-    dtsContent
-  );
+  // Note: global.d.ts generation moved to build.ts for better workflow
 
   // --- Generate Kotlin ---
   const androidPackage = config.androidPackageName;
@@ -124,9 +110,8 @@ export async function runCodegen(): Promise<void> {
         .join(", ");
 
       const returnType = convertType(m.returnType, "kotlin");
-      return `  @LynxMethod\n  fun ${m.name}(${params})${
-        returnType !== "Unit" ? `: ${returnType}` : ""
-      } {\n    TODO()\n  }`;
+      return `  @LynxMethod\n  fun ${m.name}(${params})${returnType !== "Unit" ? `: ${returnType}` : ""
+        } {\n    TODO()\n  }`;
     })
     .join("\n\n");
 
@@ -162,9 +147,8 @@ export async function runCodegen(): Promise<void> {
         .join(", ");
 
       const returnType = convertType(m.returnType, "swift");
-      return `    func ${m.name}(${swiftParams})${
-        returnType !== "Void" ? ` -> ${returnType}` : ""
-      } {\n        fatalError("Not implemented")\n    }`;
+      return `    func ${m.name}(${swiftParams})${returnType !== "Void" ? ` -> ${returnType}` : ""
+        } {\n        fatalError("Not implemented")\n    }`;
     })
     .join("\n\n")}\n}\n`;
 

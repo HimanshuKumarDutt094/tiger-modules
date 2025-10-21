@@ -38,7 +38,7 @@ The lynxjs-module system provides a complete toolkit for developing, building, a
 
 #### Acceptance Criteria
 
-1. WHEN THE Module_Developer executes "lynxjs-module codegen", THE CLI_System SHALL parse the TypeScript interface extending MyModuleGenerator
+1. WHEN THE Module_Developer executes "lynxjs-module codegen", THE CLI_System SHALL parse the TypeScript interface extending TigerModule
 2. WHEN THE CLI_System parses the interface, THE CLI_System SHALL extract method signatures including parameters and return types
 3. WHEN THE CLI_System extracts method signatures, THE CLI_System SHALL generate Kotlin code in android/src/main/java with correct package structure
 4. WHEN THE CLI_System extracts method signatures, THE CLI_System SHALL generate Swift code in ios/modules with LynxModule protocol conformance

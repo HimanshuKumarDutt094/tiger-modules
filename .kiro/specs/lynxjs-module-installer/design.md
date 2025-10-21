@@ -604,9 +604,9 @@ interface FileSearchResult {
 - Message: "module.config.ts or module.config.js not found in current working directory"
 
 **Codegen Parse Failure:**
-- Detection: No interface extending MyModuleGenerator
+- Detection: No interface extending TigerModule
 - Response: Throw error with descriptive message
-- Message: "No interface extending MyModuleGenerator found in {file}"
+- Message: "No interface extending TigerModule found in {file}"
 
 **Build Failure:**
 - Detection: tsdown exit code !== 0
