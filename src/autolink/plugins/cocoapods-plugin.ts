@@ -38,7 +38,7 @@ module Pod
       
       return extensions unless File.directory?(node_modules)
       
-      Dir.glob(File.join(node_modules, '**', 'lynx.ext.json')).each do |config_file|
+      Dir.glob(File.join(node_modules, '**', 'tiger.config.json')).each do |config_file|
         extension_dir = File.dirname(config_file)
         config = JSON.parse(File.read(config_file))
         
@@ -150,7 +150,7 @@ def discover_lynx_extensions(project_root)
   
   return extensions unless File.directory?(node_modules)
   
-  Dir.glob(File.join(node_modules, '**', 'lynx.ext.json')).each do |config_file|
+  Dir.glob(File.join(node_modules, '**', 'tiger.config.json')).each do |config_file|
     extension_dir = File.dirname(config_file)
     config = JSON.parse(File.read(config_file))
     

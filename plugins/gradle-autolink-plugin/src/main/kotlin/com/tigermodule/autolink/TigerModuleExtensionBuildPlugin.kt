@@ -1,38 +1,38 @@
-package org.lynxsdk.autolink
+package com.tigermodule.autolink
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import java.io.File
 
 /**
- * Gradle Build plugin for Lynx extension integration
+ * Gradle Build plugin for TigerModule extension integration
  * Applied in build.gradle.kts to generate registry and configure dependencies
  * 
  * Usage in build.gradle.kts:
  * ```
  * plugins {
- *     id("org.lynxsdk.extension-build") version "0.0.1"
+ *     id("com.tigermodule.extension-build") version "0.0.1"
  * }
  * ```
  */
-class LynxExtensionBuildPlugin : Plugin<Project> {
+class TigerModuleExtensionBuildPlugin : Plugin<Project> {
     
     override fun apply(project: Project) {
-        println("🔌 Lynx Extension Build Plugin v0.0.1")
+        println("🔌 TigerModule Extension Build Plugin v0.0.1")
         println("   Project: ${project.name}")
         
         // Get discovered extensions from settings plugin
         @Suppress("UNCHECKED_CAST")
         val extensions = try {
-            project.rootProject.extensions.extraProperties.get("lynxExtensions") as? List<ExtensionPackage>
+            project.rootProject.extensions.extraProperties.get("tigerModuleExtensions") as? List<ExtensionPackage>
         } catch (e: Exception) {
-            println("   ⚠️  Warning: Could not retrieve lynxExtensions")
-            println("   Make sure LynxExtensionSettingsPlugin is applied in settings.gradle.kts")
+            println("   ⚠️  Warning: Could not retrieve tigerModuleExtensions")
+            println("   Make sure TigerModuleExtensionSettingsPlugin is applied in settings.gradle.kts")
             null
         } ?: emptyList()
         
         if (extensions.isEmpty()) {
-            println("   ℹ️  No Lynx extensions found")
+            println("   ℹ️  No TigerModule extensions found")
             println()
             return
         }
@@ -41,9 +41,9 @@ class LynxExtensionBuildPlugin : Plugin<Project> {
         println()
         
         // Register task to copy extension source files
-        val copyExtensionSourcesTask = project.tasks.register("copyLynxExtensionSources") {
-            group = "lynx"
-            description = "Copies native source files from Lynx extensions"
+        val copyExtensionSourcesTask = project.tasks.register("copyTigerModuleExtensionSources") {
+            group = "tigermodule"
+            description = "Copies native source files from TigerModule extensions"
             
             doLast {
                 println("📦 Copying extension source files...")
@@ -63,7 +63,7 @@ class LynxExtensionBuildPlugin : Plugin<Project> {
                     val packagePath = androidConfig.packageName.replace('.', '/')
                     val destDir = File(
                         project.layout.buildDirectory.get().asFile,
-                        "generated/source/lynx-extensions/main/java/$packagePath"
+                        "generated/source/tigermodule-extensions/main/java/$packagePath"
                     )
                     
                     destDir.mkdirs()
@@ -113,26 +113,26 @@ class LynxExtensionBuildPlugin : Plugin<Project> {
         }
         
         // Register task to generate extension registry
-        val generateRegistryTask = project.tasks.register("generateLynxExtensionRegistry") {
-            group = "lynx"
-            description = "Generates ExtensionRegistry.kt for discovered Lynx extensions"
+        val generateRegistryTask = project.tasks.register("generateTigerModuleExtensionRegistry") {
+            group = "tigermodule"
+            description = "Generates ExtensionRegistry.kt for discovered TigerModule extensions"
             
             dependsOn(copyExtensionSourcesTask)
             
             doLast {
-                println("🔨 Generating Lynx Extension Registry...")
+                println("🔨 Generating TigerModule Extension Registry...")
                 
                 try {
                     val outputDir = File(
                         project.layout.buildDirectory.get().asFile,
-                        "generated/source/lynx/main/kotlin/com/lynx/autolink/generated"
+                        "generated/source/tigermodule/main/kotlin/com/tigermodule/autolink/generated"
                     )
                     
                     val generator = RegistryGenerator()
                     generator.generateAndroidRegistry(
                         extensions = extensions,
                         outputDir = outputDir,
-                        packageName = "com.lynx.autolink.generated"
+                        packageName = "com.tigermodule.autolink.generated"
                     )
                 } catch (e: Exception) {
                     println()
@@ -161,12 +161,12 @@ class LynxExtensionBuildPlugin : Plugin<Project> {
                 try {
                     val generatedSourceDir = File(
                         project.layout.buildDirectory.get().asFile,
-                        "generated/source/lynx/main/kotlin"
+                        "generated/source/tigermodule/main/kotlin"
                     )
                     
                     val extensionSourceDir = File(
                         project.layout.buildDirectory.get().asFile,
-                        "generated/source/lynx-extensions/main/java"
+                        "generated/source/tigermodule-extensions/main/java"
                     )
                     
                     // Add to Android source sets using reflection (works with both AGP 7.x and 8.x)
@@ -202,14 +202,14 @@ class LynxExtensionBuildPlugin : Plugin<Project> {
         }
         
         // Create a task to list discovered extensions
-        project.tasks.register("listLynxExtensions") {
-            group = "lynx"
-            description = "Lists all discovered Lynx extensions"
+        project.tasks.register("listTigerModuleExtensions") {
+            group = "tigermodule"
+            description = "Lists all discovered TigerModule extensions"
             
             doLast {
                 println()
                 println("=" .repeat(60))
-                println("Discovered Lynx Extensions")
+                println("Discovered TigerModule Extensions")
                 println("=" .repeat(60))
                 
                 if (extensions.isEmpty()) {

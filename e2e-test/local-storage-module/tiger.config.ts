@@ -1,4 +1,4 @@
-import { defineConfig } from "lynxjs-module/config";
+import { defineConfig } from "tiger-module/config";
 export default defineConfig({
   name: "local-storage-module",
   version: "0.1.0",

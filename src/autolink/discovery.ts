@@ -147,8 +147,8 @@ export class ExtensionDiscovery {
    */
   private async scanNodeModules(projectRoot: string): Promise<void> {
     try {
-      // Use fast-glob to find all lynx.ext.json files in node_modules
-      const configFiles = await fg("node_modules/**/lynx.ext.json", {
+      // Use fast-glob to find all tiger.config.json files in node_modules
+      const configFiles = await fg("node_modules/**/tiger.config.json", {
         cwd: projectRoot,
         absolute: true,
         ignore: ["**/node_modules/**/node_modules/**"], // Avoid nested node_modules
@@ -175,8 +175,8 @@ export class ExtensionDiscovery {
    * @param packagePath - Path to package directory
    */
   private async processPackage(packagePath: string): Promise<void> {
-    // Check for lynx.ext.json
-    const configPath = join(packagePath, "lynx.ext.json");
+    // Check for tiger.config.json
+    const configPath = join(packagePath, "tiger.config.json");
     if (!pathExistsSync(configPath)) {
       return; // Not an extension package
     }
@@ -189,7 +189,7 @@ export class ExtensionDiscovery {
         this.errors.push(
           new DiscoveryError(
             packagePath,
-            "Invalid lynx.ext.json configuration",
+            "Invalid tiger.config.json configuration",
             parseResult.validation.errors.map((e) => e.message).join("; "),
           ),
         );

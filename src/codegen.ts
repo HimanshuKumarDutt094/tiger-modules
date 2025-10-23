@@ -7,7 +7,7 @@ import { convertType } from "./util";
 import { loadConfig } from "./autolink/config-loader.js";
 import { validateAutolinkConfig } from "./autolink/validation.js";
 
-// Load config from lynx.ext.ts/js/json
+// Load config from tiger.config.ts/js/json
 async function loadModuleConfig(): Promise<{
   moduleName: string;
   androidPackageName: string;

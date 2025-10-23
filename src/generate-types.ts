@@ -5,7 +5,7 @@ import fs from "fs";
 import path from "path";
 import { loadConfig } from "./autolink/config-loader.js";
 
-// Load config from lynx.ext.ts/js/json (async version)
+// Load config from tiger.config.ts/js/json (async version)
 async function loadModuleConfig(): Promise<{
   moduleName: string;
   androidPackageName: string;

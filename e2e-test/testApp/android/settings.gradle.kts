@@ -14,7 +14,7 @@ pluginManagement {
 }
 
 plugins {
-    id("org.lynxsdk.extension-settings") version "0.0.1"
+    id("com.tigermodule.extension-settings") version "0.0.1"
 }
 
 dependencyResolutionManagement {

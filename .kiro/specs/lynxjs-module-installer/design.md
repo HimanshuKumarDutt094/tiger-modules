@@ -2,7 +2,7 @@
 
 ## Overview
 
-The lynxjs-module system consists of three main components:
+The tiger-module system consists of three main components:
 
 1. **CLI System** - Command-line interface providing init, codegen, and build commands
 2. **Code Generation Engine** - TypeScript AST parser that generates native code from interfaces
@@ -17,11 +17,11 @@ The system follows a clear workflow: Module developers scaffold projects with `i
 ```mermaid
 graph TB
     subgraph "Module Development"
-        A[lynxjs-module init] --> B[Scaffold Project]
+        A[tiger-module init] --> B[Scaffold Project]
         B --> C[Define TS Interface]
-        C --> D[lynxjs-module codegen]
+        C --> D[tiger-module codegen]
         D --> E[Implement Native Code]
-        E --> F[lynxjs-module build]
+        E --> F[tiger-module build]
         F --> G[Publish to npm]
     end
 
@@ -194,7 +194,7 @@ async function copyModuleConfig(
 **dist/install.js Content:**
 
 ```javascript
-import install from "lynxjs-module/install";
+import install from "tiger-module/install";
 const moduleDir = process.cwd();
 console.log("Starting lynx module installer...");
 console.log("Current module directory:", moduleDir);

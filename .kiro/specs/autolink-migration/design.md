@@ -2,7 +2,7 @@
 
 ## Overview
 
-This design outlines the migration of the lynxjs-module CLI from fragile file pattern matching to a robust Autolink mechanism. The solution introduces automatic discovery and integration of LynxJS native extensions through build system plugins, standardized package formats, and generated integration registries.
+This design outlines the migration of the tiger-module CLI from fragile file pattern matching to a robust Autolink mechanism. The solution introduces automatic discovery and integration of LynxJS native extensions through build system plugins, standardized package formats, and generated integration registries.
 
 The architecture follows the proven React Native autolinking approach but adapts it specifically for LynxJS's module system and build requirements.
 
@@ -13,7 +13,7 @@ The architecture follows the proven React Native autolinking approach but adapts
 ```mermaid
 graph TB
     subgraph "Extension Development"
-        A[Extension Developer] --> B[lynxjs-module CLI]
+        A[Extension Developer] --> B[tiger-module CLI]
         B --> C[Extension Package]
         C --> D[npm Registry]
     end
@@ -43,17 +43,17 @@ graph TB
 
 ### Core Components
 
-1. **Enhanced CLI Tool**: Extended lynxjs-module with Autolink support
+1. **Enhanced CLI Tool**: Extended tiger-module with Autolink support
 2. **Discovery Engine**: Scans node_modules for extension packages
 3. **Build System Plugins**: Platform-specific integration handlers
 4. **Registry Generator**: Creates platform-specific registration code
-5. **Configuration Parser**: Handles lynx.ext.json metadata
+5. **Configuration Parser**: Handles tiger.config.json metadata
 
 ## Components and Interfaces
 
 ### 1. Enhanced CLI Tool
 
-**Purpose**: Extends existing lynxjs-module CLI with Autolink capabilities
+**Purpose**: Extends existing tiger-module CLI with Autolink capabilities
 
 **Key Interfaces**:
 
@@ -84,9 +84,9 @@ interface IOSConfig {
 
 **Commands**:
 
-- `lynxjs-module init --autolink` - Create Autolink-compatible extension
-- `lynxjs-module migrate` - Convert legacy modules to Autolink format
-- `lynxjs-module validate` - Verify extension package structure
+- `tiger-module init --autolink` - Create Autolink-compatible extension
+- `tiger-module migrate` - Convert legacy modules to Autolink format
+- `tiger-module validate` - Verify extension package structure
 
 ### 2. Discovery Engine
 
@@ -97,7 +97,7 @@ interface IOSConfig {
 ```typescript
 class ExtensionDiscovery {
   async discoverExtensions(projectRoot: string): Promise<ExtensionInfo[]> {
-    // 1. Scan node_modules for packages with lynx.ext.json
+    // 1. Scan node_modules for packages with tiger.config.json
     // 2. Parse configuration files
     // 3. Validate platform support
     // 4. Build dependency graph
@@ -112,7 +112,7 @@ class ExtensionDiscovery {
 
 **Discovery Process**:
 
-1. Scan `node_modules` for `lynx.ext.json` files
+1. Scan `node_modules` for `tiger.config.json` files
 2. Parse configuration and validate structure
 3. Check platform compatibility
 4. Resolve inter-extension dependencies
@@ -197,7 +197,7 @@ class RegistryGenerator {
 
 ### 5. Configuration System
 
-**lynx.ext.json Structure**:
+**tiger.config.json Structure**:
 
 ```json
 {
@@ -232,7 +232,7 @@ class RegistryGenerator {
 
 ```
 @lynxjs/extension-name/
-├── lynx.ext.json              # Autolink configuration
+├── tiger.config.json              # Autolink configuration
 ├── package.json               # npm package metadata
 ├── src/                       # TypeScript source
 │   ├── index.ts              # Main export
@@ -278,7 +278,7 @@ interface ModuleInfo {
 
 ### Discovery Errors
 
-- **Missing Configuration**: Clear error when lynx.ext.json is missing or malformed
+- **Missing Configuration**: Clear error when tiger.config.json is missing or malformed
 - **Platform Mismatch**: Warning when extension doesn't support current platform
 - **Dependency Conflicts**: Resolution guidance for conflicting extension versions
 - **Invalid Structure**: Detailed validation errors with fix suggestions
@@ -302,7 +302,7 @@ interface ModuleInfo {
 
 - **Discovery Engine**: Test extension scanning and validation logic
 - **Registry Generator**: Verify generated code correctness for all platforms
-- **Configuration Parser**: Test lynx.ext.json parsing and validation
+- **Configuration Parser**: Test tiger.config.json parsing and validation
 - **CLI Commands**: Test all new CLI functionality with mocked file systems
 
 ### Integration Testing

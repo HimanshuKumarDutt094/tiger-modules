@@ -1,5 +1,5 @@
 // NativeLocalStorage module interface
-import { TigerModule } from "lynxjs-module/runtime";
+import { TigerModule } from "tiger-module/runtime";
 export interface NativeLocalStorageModule extends TigerModule {
   setStorageItem(key: string, value: string): void;
   getStorageItem(key: string, callback: (value: string | null) => void): void;

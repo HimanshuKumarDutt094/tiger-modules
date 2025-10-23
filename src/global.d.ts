@@ -1,4 +1,4 @@
-// lynxjs-module global declarations
+// tiger-module global declarations
 /// <reference types="@lynx-js/types" />
 
 declare global {

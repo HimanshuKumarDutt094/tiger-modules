@@ -8,7 +8,7 @@ import com.lynx.tasm.LynxBooleanOption
 import com.lynx.tasm.LynxView
 import com.lynx.tasm.LynxViewBuilder
 import com.lynx.xelement.XElementBehaviors
-import com.lynx.autolink.generated.ExtensionRegistry
+import com.tigermodule.autolink.generated.ExtensionRegistry
 
 class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {

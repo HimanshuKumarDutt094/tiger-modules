@@ -2,7 +2,7 @@
 
 - [x] 1. Set up core infrastructure and configuration system
   - Create AutolinkConfig interface and validation logic
-  - Implement lynx.ext.json parser with comprehensive error handling
+  - Implement tiger.config.json parser with comprehensive error handling
   - Add configuration validation with detailed error messages
   - _Requirements: 2.2, 3.4_
 
@@ -13,7 +13,7 @@
   - _Requirements: 2.2_
 
 - [x] 1.2 Implement configuration file parser
-  - Write lynx.ext.json parsing logic with JSON schema validation
+  - Write tiger.config.json parsing logic with JSON schema validation
   - Add support for configuration inheritance and defaults
   - Implement configuration merging for platform-specific overrides
   - _Requirements: 2.2, 3.4_
@@ -31,7 +31,7 @@
   - _Requirements: 3.1, 3.2, 3.5_
 
 - [x] 2.1 Create extension scanning and discovery logic
-  - Implement recursive node_modules scanning for lynx.ext.json files using fast-glob
+  - Implement recursive node_modules scanning for tiger.config.json files using fast-glob
   - Add package.json parsing to extract extension metadata using fs-extra
   - Create extension information data structures and validation
   - _Requirements: 3.1, 3.2_
@@ -122,14 +122,14 @@
 
 - [x] 5.1 Extend init command with autolink support
   - Add --autolink flag to generate autolink-compatible extensions
-  - Create lynx.ext.json template generation with platform detection
+  - Create tiger.config.json template generation with platform detection
   - Update package.json template with autolink metadata
   - _Requirements: 2.1, 2.2_
 
 - [x] 5.2 Implement migration command for legacy modules
   - Create migrate command that converts existing modules to autolink format
   - Add automatic detection of legacy module structure
-  - Generate lynx.ext.json from existing module.config.ts files
+  - Generate tiger.config.json from existing module.config.ts files
   - _Requirements: 4.1, 4.3, 4.4_
 
 - [x] 5.3 Add validation command for extension packages

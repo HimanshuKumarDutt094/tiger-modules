@@ -12,7 +12,7 @@ This specification extends the LynxJS Autolink system to handle both Java and Ko
 - **Extension_Package**: An npm package containing LynxJS native code following the standardized package structure
 - **Module_Registration**: The process of registering native modules with the LynxJS NativeModuleRegistry
 - **Java_Support**: The ability to process and integrate Java source files in addition to Kotlin for Android
-- **lynx_ext_json**: The configuration file (lynx.ext.json) that declares extension metadata including native modules
+- **lynx_ext_json**: The configuration file (tiger.config.json) that declares extension metadata including native modules
 - **Unified_Registry**: A single registry file that consolidates all module registrations regardless of the number of Extension_Packages
 
 ## Requirements
@@ -43,7 +43,7 @@ This specification extends the LynxJS Autolink system to handle both Java and Ko
 
 ### Requirement 3
 
-**User Story:** As an extension developer, I want to declare module metadata in lynx.ext.json, so that the Autolink system knows which modules to register.
+**User Story:** As an extension developer, I want to declare module metadata in tiger.config.json, so that the Autolink system knows which modules to register.
 
 #### Acceptance Criteria
 

@@ -65,22 +65,22 @@ async function copyAutolinkConfig(moduleDir: string, distDir: string) {
   try {
     const { configFile, configPath } = await loadConfig(moduleDir);
 
-    if (configFile === "lynx.ext.json") {
+    if (configFile === "tiger.config.json") {
       // Copy JSON file directly
-      const destPath = path.join(distDir, "lynx.ext.json");
+      const destPath = path.join(distDir, "tiger.config.json");
       await fs.promises.copyFile(configPath, destPath);
-      console.log("✓ copied lynx.ext.json to dist/");
+      console.log("✓ copied tiger.config.json to dist/");
     } else {
       // For TS/JS configs, we need to compile and generate JSON
       const { config } = await loadConfig(moduleDir);
-      const destPath = path.join(distDir, "lynx.ext.json");
+      const destPath = path.join(distDir, "tiger.config.json");
       await fs.promises.writeFile(destPath, JSON.stringify(config, null, 2));
-      console.log(`✓ compiled ${configFile} to dist/lynx.ext.json`);
+      console.log(`✓ compiled ${configFile} to dist/tiger.config.json`);
     }
   } catch (error) {
     throw new Error(
       `Failed to load autolink configuration: ${error instanceof Error ? error.message : error}\n` +
-        `This tool only supports autolink extensions. Run 'lynxjs-module init' to create a new extension.`,
+        `This tool only supports autolink extensions. Run 'tiger-module init' to create a new extension.`,
     );
   }
 }
@@ -96,7 +96,7 @@ async function writeDistPackageJson(moduleDir: string, distDir: string) {
     "web",
     "*.js",
     "*.d.ts",
-    "lynx.ext.json", // Always include JSON in dist for runtime
+    "tiger.config.json", // Always include JSON in dist for runtime
   ];
 
   pkg.files = Array.from(new Set([...(pkg.files || []), ...baseFiles]));
@@ -152,7 +152,7 @@ export default async function buildModule() {
   } catch (error) {
     throw new Error(
       `No autolink configuration found. This tool only supports autolink extensions.\n` +
-        `Run 'lynxjs-module init' to create a new extension.\n` +
+        `Run 'tiger-module init' to create a new extension.\n` +
         `Error: ${error instanceof Error ? error.message : error}`,
     );
   }
@@ -218,7 +218,7 @@ export default async function buildModule() {
     }
   }
 
-  // 7. Copy/compile config to dist/lynx.ext.json (required for autolink)
+  // 7. Copy/compile config to dist/tiger.config.json (required for autolink)
   await copyAutolinkConfig(moduleDir, distDir);
 
   // 8. Write dist/package.json with proper exports

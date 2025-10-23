@@ -1,1 +1,1 @@
-rootProject.name = "gradle-autolink-plugin"
+rootProject.name = "tiger-module-autolink-plugin"

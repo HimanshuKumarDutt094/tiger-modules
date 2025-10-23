@@ -7,7 +7,7 @@ import buildModule from "./build";
 const program = new Command();
 
 program
-  .name("lynxjs-module")
+  .name("tiger-module")
   .description("CLI for LynxJS autolink extensions")
   .version("0.1.0")
   .helpOption("-h, --help", "display help for command");

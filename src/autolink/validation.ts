@@ -26,7 +26,7 @@ export function validateAutolinkConfig(config: unknown): ValidationResult {
         ConfigErrorType.INVALID_JSON,
         undefined,
         "Configuration must be a valid JSON object",
-        "Ensure lynx.ext.json contains a valid JSON object",
+        "Ensure tiger.config.json contains a valid JSON object",
       ),
     );
     return { valid: false, errors, warnings };
@@ -366,7 +366,7 @@ function validateRequiredField(
         ConfigErrorType.MISSING_REQUIRED_FIELD,
         field,
         `Required field '${field}' is missing`,
-        `Add '${field}' field to lynx.ext.json`,
+        `Add '${field}' field to tiger.config.json`,
       ),
     );
   } else if (typeof config[field] !== expectedType) {

@@ -7,11 +7,11 @@ import type { LynxExtConfig } from "./config.js";
  * Supported configuration file names in order of preference
  */
 const CONFIG_FILES = [
-  "lynx.ext.ts",
-  "lynx.ext.js",
-  "lynx.ext.mjs",
-  "lynx.ext.cjs",
-  "lynx.ext.json",
+  "tiger.config.ts",
+  "tiger.config.js",
+  "tiger.config.mjs",
+  "tiger.config.cjs",
+  "tiger.config.json",
 ] as const;
 
 export type ConfigFile = (typeof CONFIG_FILES)[number];
@@ -27,7 +27,7 @@ export interface ConfigLoadResult {
 
 /**
  * Load Lynx extension configuration from various file formats
- * Supports: lynx.ext.ts, lynx.ext.js, lynx.ext.mjs, lynx.ext.cjs, lynx.ext.json
+ * Supports: tiger.config.ts, tiger.config.js, tiger.config.mjs, tiger.config.cjs, tiger.config.json
  */
 export async function loadConfig(
   projectRoot: string = process.cwd(),
@@ -47,14 +47,14 @@ export async function loadConfig(
 
   if (!configFile || !configPath) {
     throw new Error(
-      `No Lynx extension configuration found. Expected one of:\n${CONFIG_FILES.map((f) => `  - ${f}`).join("\n")}\n\nRun 'lynxjs-module init' to create a new extension.`,
+      `No Lynx extension configuration found. Expected one of:\n${CONFIG_FILES.map((f) => `  - ${f}`).join("\n")}\n\nRun 'tiger-module init' to create a new extension.`,
     );
   }
 
   let config: LynxExtConfig;
 
   try {
-    if (configFile === "lynx.ext.json") {
+    if (configFile === "tiger.config.json") {
       // Load JSON file
       const content = fs.readFileSync(configPath, "utf8");
       config = JSON.parse(content);
@@ -96,11 +96,11 @@ export async function loadConfig(
 export function loadConfigSync(
   projectRoot: string = process.cwd(),
 ): ConfigLoadResult {
-  const jsonPath = path.join(projectRoot, "lynx.ext.json");
+  const jsonPath = path.join(projectRoot, "tiger.config.json");
 
   if (!fs.existsSync(jsonPath)) {
     throw new Error(
-      `lynx.ext.json not found at ${jsonPath}\n` +
+      `tiger.config.json not found at ${jsonPath}\n` +
         `For TypeScript/JavaScript configs, use the async loadConfig() function.`,
     );
   }
@@ -111,12 +111,12 @@ export function loadConfigSync(
 
     return {
       config,
-      configFile: "lynx.ext.json",
+      configFile: "tiger.config.json",
       configPath: jsonPath,
     };
   } catch (error) {
     if (error instanceof SyntaxError) {
-      throw new Error(`Failed to parse lynx.ext.json: ${error.message}`);
+      throw new Error(`Failed to parse tiger.config.json: ${error.message}`);
     }
     throw error;
   }
@@ -126,5 +126,5 @@ export function loadConfigSync(
  * Get the preferred config file name for new projects
  */
 export function getPreferredConfigFile(): ConfigFile {
-  return "lynx.ext.ts";
+  return "tiger.config.ts";
 }

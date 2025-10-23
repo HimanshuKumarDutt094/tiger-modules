@@ -42,9 +42,9 @@ describe("ExtensionDiscovery", () => {
       const pkgDir = join(nodeModules, "@lynxjs", "test-module");
       mkdirSync(pkgDir, { recursive: true });
 
-      // Create lynx.ext.json
+      // Create tiger.config.json
       writeFileSync(
-        join(pkgDir, "lynx.ext.json"),
+        join(pkgDir, "tiger.config.json"),
         JSON.stringify({
           name: "@lynxjs/test-module",
           version: "1.0.0",
@@ -95,7 +95,7 @@ describe("ExtensionDiscovery", () => {
         mkdirSync(pkgDir, { recursive: true });
 
         writeFileSync(
-          join(pkgDir, "lynx.ext.json"),
+          join(pkgDir, "tiger.config.json"),
           JSON.stringify({
             name: `@author${i}/extension-${i}`,
             version: `${i}.0.0`,
@@ -164,7 +164,7 @@ describe("ExtensionDiscovery", () => {
         const fullName = pkg.scope ? `${pkg.scope}/${pkg.name}` : pkg.name;
 
         writeFileSync(
-          join(pkgDir, "lynx.ext.json"),
+          join(pkgDir, "tiger.config.json"),
           JSON.stringify({
             name: fullName,
             version: "1.0.0",
@@ -211,7 +211,7 @@ describe("ExtensionDiscovery", () => {
   });
 
   describe("Recursive Scanning", () => {
-    it("should recursively find lynx.ext.json files in nested directories", async () => {
+    it("should recursively find tiger.config.json files in nested directories", async () => {
       const nodeModules = join(testRoot, "node_modules");
 
       // Create nested structure
@@ -225,7 +225,7 @@ describe("ExtensionDiscovery", () => {
         mkdirSync(paths[i], { recursive: true });
 
         writeFileSync(
-          join(paths[i], "lynx.ext.json"),
+          join(paths[i], "tiger.config.json"),
           JSON.stringify({
             name: `package${i + 1}`,
             version: "1.0.0",
@@ -270,7 +270,7 @@ describe("ExtensionDiscovery", () => {
 
       // Create extension in top-level node_modules
       writeFileSync(
-        join(pkg1Dir, "lynx.ext.json"),
+        join(pkg1Dir, "tiger.config.json"),
         JSON.stringify({
           name: "package1",
           version: "1.0.0",
@@ -299,7 +299,7 @@ describe("ExtensionDiscovery", () => {
 
       // Create extension in nested node_modules (should be ignored)
       writeFileSync(
-        join(pkg2Dir, "lynx.ext.json"),
+        join(pkg2Dir, "tiger.config.json"),
         JSON.stringify({
           name: "package2",
           version: "1.0.0",
@@ -341,7 +341,7 @@ describe("ExtensionDiscovery", () => {
       mkdirSync(pkgDir, { recursive: true });
 
       writeFileSync(
-        join(pkgDir, "lynx.ext.json"),
+        join(pkgDir, "tiger.config.json"),
         JSON.stringify({
           name: "old-format",
           version: "1.0.0",
@@ -379,7 +379,7 @@ describe("ExtensionDiscovery", () => {
       mkdirSync(pkgDir, { recursive: true });
 
       writeFileSync(
-        join(pkgDir, "lynx.ext.json"),
+        join(pkgDir, "tiger.config.json"),
         JSON.stringify({
           name: "new-format",
           version: "1.0.0",
@@ -421,7 +421,7 @@ describe("ExtensionDiscovery", () => {
       mkdirSync(pkgDir, { recursive: true });
 
       writeFileSync(
-        join(pkgDir, "lynx.ext.json"),
+        join(pkgDir, "tiger.config.json"),
         JSON.stringify({
           name: "java-module",
           version: "1.0.0",
@@ -459,12 +459,12 @@ describe("ExtensionDiscovery", () => {
   });
 
   describe("Error Handling", () => {
-    it("should handle invalid JSON in lynx.ext.json", async () => {
+    it("should handle invalid JSON in tiger.config.json", async () => {
       const nodeModules = join(testRoot, "node_modules");
       const pkgDir = join(nodeModules, "invalid-json");
       mkdirSync(pkgDir, { recursive: true });
 
-      writeFileSync(join(pkgDir, "lynx.ext.json"), "{ invalid json }");
+      writeFileSync(join(pkgDir, "tiger.config.json"), "{ invalid json }");
       writeFileSync(
         join(pkgDir, "package.json"),
         JSON.stringify({
@@ -485,7 +485,7 @@ describe("ExtensionDiscovery", () => {
       mkdirSync(pkgDir, { recursive: true });
 
       writeFileSync(
-        join(pkgDir, "lynx.ext.json"),
+        join(pkgDir, "tiger.config.json"),
         JSON.stringify({
           name: "no-package-json",
           version: "1.0.0",
@@ -512,7 +512,7 @@ describe("ExtensionDiscovery", () => {
       const validPkgDir = join(nodeModules, "valid-package");
       mkdirSync(validPkgDir, { recursive: true });
       writeFileSync(
-        join(validPkgDir, "lynx.ext.json"),
+        join(validPkgDir, "tiger.config.json"),
         JSON.stringify({
           name: "valid-package",
           version: "1.0.0",
@@ -535,7 +535,7 @@ describe("ExtensionDiscovery", () => {
       // Create invalid package
       const invalidPkgDir = join(nodeModules, "invalid-package");
       mkdirSync(invalidPkgDir, { recursive: true });
-      writeFileSync(join(invalidPkgDir, "lynx.ext.json"), "{ invalid }");
+      writeFileSync(join(invalidPkgDir, "tiger.config.json"), "{ invalid }");
 
       const result = await discovery.discoverExtensions(testRoot);
 
@@ -552,7 +552,7 @@ describe("ExtensionDiscovery", () => {
       mkdirSync(pkgDir, { recursive: true });
 
       writeFileSync(
-        join(pkgDir, "lynx.ext.json"),
+        join(pkgDir, "tiger.config.json"),
         JSON.stringify({
           name: "multi-platform",
           version: "1.0.0",

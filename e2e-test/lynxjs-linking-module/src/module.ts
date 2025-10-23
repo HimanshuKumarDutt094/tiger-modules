@@ -1,5 +1,5 @@
 // LynxjsLinking module interface
-import { TigerModule } from "lynxjs-module/runtime";
+import { TigerModule } from "tiger-module/runtime";
 export interface LynxjsLinkingModule extends TigerModule {
   openURL(url: string, callback: (err?: string) => void): void;
   openSettings(callback: (err?: string) => void): void;

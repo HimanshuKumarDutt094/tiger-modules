@@ -13,15 +13,15 @@ The key insight is that we already have the infrastructure - we just need to enh
 ```mermaid
 graph TB
     subgraph "Multiple Extension Packages"
-        A1[Package 1<br/>lynx.ext.json] --> B[node_modules]
-        A2[Package 2<br/>lynx.ext.json] --> B
-        A3[Package 10<br/>lynx.ext.json] --> B
+        A1[Package 1<br/>tiger.config.json] --> B[node_modules]
+        A2[Package 2<br/>tiger.config.json] --> B
+        A3[Package 10<br/>tiger.config.json] --> B
     end
 
     subgraph "Build Process"
         B --> C[Gradle Plugin]
         C --> D[ExtensionDiscovery]
-        D --> E[Parse all lynx.ext.json]
+        D --> E[Parse all tiger.config.json]
         E --> F[Aggregate Modules]
         F --> G[RegistryGenerator]
     end
@@ -44,21 +44,21 @@ graph TB
 
 **Current State:**
 
-- ✅ Discovery scans node_modules for lynx.ext.json
+- ✅ Discovery scans node_modules for tiger.config.json
 - ✅ Generates single ExtensionRegistry.kt
 - ⚠️ Assumes Kotlin-only modules
 - ⚠️ Uses simple string arrays for module names
 
 **Enhanced State:**
 
-- ✅ Discovery scans node_modules for lynx.ext.json
+- ✅ Discovery scans node_modules for tiger.config.json
 - ✅ Generates single ExtensionRegistry.kt
 - ✅ Supports both Java and Kotlin modules
 - ✅ Uses structured module metadata with className
 
 ## Components and Interfaces
 
-### 1. Enhanced lynx.ext.json Configuration
+### 1. Enhanced tiger.config.json Configuration
 
 **Current Format:**
 
@@ -250,10 +250,10 @@ object ExtensionRegistry {
 
 ### 4. Enhanced CLI Tool
 
-**Update `lynxjs-module init` command:**
+**Update `tiger-module init` command:**
 
 ```typescript
-// Generate lynx.ext.json with structured module config
+// Generate tiger.config.json with structured module config
 const lynxExtConfig = {
   name: packageName,
   version: "1.0.0",
@@ -285,7 +285,7 @@ const lynxExtConfig = {
 
 ```
 @lynxjs/extension-name/
-├── lynx.ext.json              # Enhanced configuration
+├── tiger.config.json              # Enhanced configuration
 ├── package.json
 ├── src/                       # TypeScript source
 │   ├── index.ts
@@ -316,7 +316,7 @@ sequenceDiagram
     FS-->>ED: List of directories
 
     loop For each package
-        ED->>FS: Read lynx.ext.json
+        ED->>FS: Read tiger.config.json
         FS-->>ED: Config JSON
         ED->>ED: Parse & validate config
         ED->>ED: Extract module metadata
@@ -345,14 +345,14 @@ sequenceDiagram
 if (config.platforms.android == null) {
     throw GradleException(
         "Extension ${config.name} is missing Android platform configuration. " +
-        "Add 'platforms.android' to lynx.ext.json"
+        "Add 'platforms.android' to tiger.config.json"
     )
 }
 
 if (config.platforms.android.packageName.isEmpty()) {
     throw GradleException(
         "Extension ${config.name} has empty Android packageName. " +
-        "Set 'platforms.android.packageName' in lynx.ext.json"
+        "Set 'platforms.android.packageName' in tiger.config.json"
     )
 }
 ```
@@ -575,7 +575,7 @@ fun parseNativeModules(json: JsonElement): List<NativeModuleConfig> {
 **Update init command:**
 
 1. Add `--language` flag (kotlin/java)
-2. Generate structured lynx.ext.json
+2. Generate structured tiger.config.json
 3. Update templates for Java modules
 4. Add migration command for existing modules
 

@@ -1,4 +1,4 @@
-package org.lynxsdk.autolink
+package com.tigermodule.autolink
 
 import org.gradle.api.Plugin
 import org.gradle.api.initialization.Settings
@@ -6,21 +6,21 @@ import org.gradle.api.Action
 import org.gradle.api.Project
 
 /**
- * Gradle Settings plugin for Lynx extension discovery
+ * Gradle Settings plugin for TigerModule extension discovery
  * Applied in settings.gradle.kts to discover extensions early in the build lifecycle
  * 
  * Usage in settings.gradle.kts:
  * ```
  * plugins {
- *     id("org.lynxsdk.extension-settings") version "0.0.1"
+ *     id("com.tigermodule.extension-settings") version "0.0.1"
  * }
  * ```
  */
-class LynxExtensionSettingsPlugin : Plugin<Settings> {
+class TigerModuleExtensionSettingsPlugin : Plugin<Settings> {
     
     override fun apply(settings: Settings) {
-        println("🔌 Lynx Extension Settings Plugin v0.0.1")
-        println("   Scanning for Lynx extensions...")
+        println("🔌 TigerModule Extension Settings Plugin v0.0.1")
+        println("   Scanning for TigerModule extensions...")
         
         // Discover extensions in node_modules
         // For Android projects, the node_modules is typically in the parent directory
@@ -44,7 +44,7 @@ class LynxExtensionSettingsPlugin : Plugin<Settings> {
         // Use rootProject action to set extra properties when root project is available
         settings.gradle.rootProject(object : Action<Project> {
             override fun execute(project: Project) {
-                project.extensions.extraProperties.set("lynxExtensions", discoveredExtensions)
+                project.extensions.extraProperties.set("tigerModuleExtensions", discoveredExtensions)
             }
         })
         

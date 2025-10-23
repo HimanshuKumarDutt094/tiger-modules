@@ -12,7 +12,7 @@ The current Lynx autolink system only supports basic native module registration 
 - **Initialization Hook**: Custom code that runs during module registration to perform setup beyond basic instantiation
 - **Application Context**: Android Application instance required for system-level operations
 - **Activity Lifecycle Callbacks**: Android mechanism for monitoring activity state changes
-- **lynx.ext.json**: Configuration file that defines extension metadata and requirements
+- **tiger.config.json**: Configuration file that defines extension metadata and requirements
 
 ## Requirements
 
@@ -22,7 +22,7 @@ The current Lynx autolink system only supports basic native module registration 
 
 #### Acceptance Criteria
 
-1. WHEN a native module declares lifecycle callback requirements in lynx.ext.json, THE Extension_Registry SHALL register the callbacks during setupGlobal execution
+1. WHEN a native module declares lifecycle callback requirements in tiger.config.json, THE Extension_Registry SHALL register the callbacks during setupGlobal execution
 2. WHEN the Application context is available during setupGlobal, THE Extension_Registry SHALL pass the context to modules requiring lifecycle access
 3. WHEN a module fails to register lifecycle callbacks, THE Extension_Registry SHALL log the error and continue with other modules
 4. WHERE a module requires Application context, THE Extension_Registry SHALL validate context type before registration
@@ -34,7 +34,7 @@ The current Lynx autolink system only supports basic native module registration 
 
 #### Acceptance Criteria
 
-1. WHEN a module defines initialization hooks in lynx.ext.json, THE Extension_Registry SHALL execute the hooks during module registration
+1. WHEN a module defines initialization hooks in tiger.config.json, THE Extension_Registry SHALL execute the hooks during module registration
 2. WHEN initialization hooks are present, THE Extension_Registry SHALL call the hooks before standard module registration
 3. IF initialization hooks fail, THEN THE Extension_Registry SHALL log the failure and skip that module's registration
 4. WHERE multiple initialization hooks are defined, THE Extension_Registry SHALL execute them in the specified order
@@ -46,7 +46,7 @@ The current Lynx autolink system only supports basic native module registration 
 
 #### Acceptance Criteria
 
-1. WHEN modules declare dependencies in lynx.ext.json, THE Extension_Registry SHALL resolve and initialize modules in dependency order
+1. WHEN modules declare dependencies in tiger.config.json, THE Extension_Registry SHALL resolve and initialize modules in dependency order
 2. WHEN circular dependencies are detected, THE Extension_Registry SHALL report the error and fail the build
 3. WHILE resolving dependencies, THE Extension_Registry SHALL validate that all required modules are available
 4. WHERE dependency resolution fails, THE Extension_Registry SHALL provide clear error messages indicating missing dependencies
@@ -70,7 +70,7 @@ The current Lynx autolink system only supports basic native module registration 
 
 #### Acceptance Criteria
 
-1. WHEN parsing lynx.ext.json files, THE Config_Validator SHALL validate initialization hook syntax and requirements
+1. WHEN parsing tiger.config.json files, THE Config_Validator SHALL validate initialization hook syntax and requirements
 2. WHEN modules declare Application context requirements, THE Config_Validator SHALL verify the module class supports the required initialization pattern
 3. IF invalid initialization configuration is detected, THEN THE Config_Validator SHALL provide specific error messages with correction suggestions
 4. WHERE dependency declarations are present, THE Config_Validator SHALL validate dependency names and versions

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This design extends the existing Lynx autolink system to support advanced native module initialization patterns. The solution introduces a flexible configuration system in `lynx.ext.json` that allows modules to declare initialization requirements, and enhances the gradle plugin to generate appropriate registration code.
+This design extends the existing Lynx autolink system to support advanced native module initialization patterns. The solution introduces a flexible configuration system in `tiger.config.json` that allows modules to declare initialization requirements, and enhances the gradle plugin to generate appropriate registration code.
 
 The design maintains full backward compatibility while adding powerful new capabilities for complex modules like the `LynxjsLinkingModule` that need Application context access and lifecycle callback registration.
 
@@ -10,7 +10,7 @@ The design maintains full backward compatibility while adding powerful new capab
 
 ### Configuration Layer
 
-- **Enhanced lynx.ext.json**: Extended schema supporting initialization hooks, dependencies, and context requirements
+- **Enhanced tiger.config.json**: Extended schema supporting initialization hooks, dependencies, and context requirements
 - **Validation Engine**: Build-time validation of initialization configurations
 - **Dependency Resolver**: Topological sorting of module initialization order
 
@@ -28,7 +28,7 @@ The design maintains full backward compatibility while adding powerful new capab
 
 ## Components and Interfaces
 
-### Enhanced lynx.ext.json Schema
+### Enhanced tiger.config.json Schema
 
 ```json
 {
@@ -156,7 +156,7 @@ private fun initializeLynxjsLinkingModule(application: Application) {
 
 ### Configuration Validation
 
-- **Schema Validator**: Validates lynx.ext.json against extended schema
+- **Schema Validator**: Validates tiger.config.json against extended schema
 - **Dependency Validator**: Checks for circular dependencies and missing modules
 - **Class Validator**: Verifies that declared classes and methods exist
 
@@ -241,7 +241,7 @@ private fun initializeLynxjsLinkingModule(application: Application) {
 
 The design maintains full backward compatibility:
 
-- Existing lynx.ext.json files continue to work unchanged
+- Existing tiger.config.json files continue to work unchanged
 - Modules without initialization configuration use the current registration pattern
 - Generated registry code includes fallback logic for legacy modules
 - No breaking changes to existing APIs or interfaces
@@ -250,7 +250,7 @@ The design maintains full backward compatibility:
 
 For the specific `LynxjsLinkingModule` case:
 
-1. Update `lynx.ext.json` to declare lifecycle callback requirements
+1. Update `tiger.config.json` to declare lifecycle callback requirements
 2. Regenerate the extension registry using the enhanced gradle plugin
 3. The generated code will automatically handle ActivityLifecycleCallbacks registration
 4. No changes required to the module implementation itself

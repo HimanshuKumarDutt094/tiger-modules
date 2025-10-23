@@ -64,7 +64,7 @@
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
 - [x] 3.1 Review and test extension discovery
-  - Verify scanDirectory recursively finds all lynx.ext.json files
+  - Verify scanDirectory recursively finds all tiger.config.json files
   - Test discovery with 10 different packages in node_modules
   - Ensure all packages are collected into single list
   - _Requirements: 2.1, 2.2, 7.1, 7.2_
@@ -85,7 +85,7 @@
 - [x] 4. Update CLI to generate new configuration format
   - Modify init command to generate structured nativeModules
   - Add --language flag to choose between kotlin and java
-  - Update templates to include className in lynx.ext.json
+  - Update templates to include className in tiger.config.json
   - _Requirements: 3.4, 3.5, 6.1_
 
 - [x] 4.1 Update init command configuration generation
@@ -102,12 +102,12 @@
 
 - [x] 4.3 Update module templates
   - Ensure Java templates are available for Android modules
-  - Update lynx.ext.json template to use new format
+  - Update tiger.config.json template to use new format
   - Add proper package structure for Java modules
   - _Requirements: 1.1, 1.3, 1.4_
 
 - [ ]\* 4.4 Write unit tests for CLI updates
-  - Test init command generates correct lynx.ext.json format
+  - Test init command generates correct tiger.config.json format
   - Test --language kotlin generates Kotlin config
   - Test --language java generates Java config
   - Test default behavior without --language flag

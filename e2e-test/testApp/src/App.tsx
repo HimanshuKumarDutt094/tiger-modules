@@ -4,18 +4,12 @@ import { NativeLocalStorage as NativeLocalStorageModule } from 'local-storage-mo
 import './App.css';
 
 export function App(props: { onRender?: () => void }) {
-  const [alterLogo, setAlterLogo] = useState(false);
   const [status, setStatus] = useState('Ready to test LynxLinking!');
 
   useEffect(() => {
     console.info('Hello, ReactLynx');
   }, []);
   props.onRender?.();
-
-  const onTap = useCallback(() => {
-    'background only';
-    setAlterLogo((prevAlterLogo) => !prevAlterLogo);
-  }, []);
 
   // LynxLinking demo functions
   const handleOpenURL = useCallback(async () => {
@@ -146,18 +140,18 @@ export function App(props: { onRender?: () => void }) {
       {/* LynxLinking Demo Section */}
       <view
         style={{
-          padding: 20,
+          padding: '20px',
           backgroundColor: 'rgba(255, 255, 255, 0.1)',
-          borderRadius: 10,
-          margin: 20,
+          borderRadius: '10px',
+          margin: '20px',
         }}
       >
         <text
           style={{
-            fontSize: 18,
+            fontSize: '18px',
             fontWeight: 'bold',
             color: 'white',
-            marginBottom: 15,
+            marginBottom: '15px',
             textAlign: 'center',
           }}
         >
@@ -166,26 +160,26 @@ export function App(props: { onRender?: () => void }) {
 
         <text
           style={{
-            fontSize: 14,
+            fontSize: '14px',
             color: 'rgba(255, 255, 255, 0.8)',
-            marginBottom: 15,
+            marginBottom: '15px',
             textAlign: 'center',
           }}
         >
           {status}
         </text>
 
-        <view style={{ flexDirection: 'column', gap: 10 }}>
+        <view style={{ flexDirection: 'column', gap: '10px' }}>
           <view
             bindtap={handleOpenURL}
             style={{
               backgroundColor: '#007bff',
-              padding: 12,
-              borderRadius: 8,
+              padding: '12px',
+              borderRadius: '8px',
               alignItems: 'center',
             }}
           >
-            <text style={{ color: 'white', fontSize: 16 }}>
+            <text style={{ color: 'white', fontSize: '16px' }}>
               Open URL (example.com)
             </text>
           </view>
@@ -194,12 +188,12 @@ export function App(props: { onRender?: () => void }) {
             bindtap={handleOpenSettings}
             style={{
               backgroundColor: '#28a745',
-              padding: 12,
-              borderRadius: 8,
+              padding: '12px',
+              borderRadius: '8px',
               alignItems: 'center',
             }}
           >
-            <text style={{ color: 'white', fontSize: 16 }}>
+            <text style={{ color: 'white', fontSize: '16px' }}>
               Open App Settings
             </text>
           </view>
@@ -208,12 +202,12 @@ export function App(props: { onRender?: () => void }) {
             bindtap={handleSendIntent}
             style={{
               backgroundColor: '#ffc107',
-              padding: 12,
-              borderRadius: 8,
+              padding: '12px',
+              borderRadius: '8px',
               alignItems: 'center',
             }}
           >
-            <text style={{ color: 'black', fontSize: 16 }}>
+            <text style={{ color: 'black', fontSize: '16px' }}>
               Send Intent (Call Phone)
             </text>
           </view>
@@ -222,24 +216,24 @@ export function App(props: { onRender?: () => void }) {
             bindtap={handleShareText}
             style={{
               backgroundColor: '#17a2b8',
-              padding: 12,
-              borderRadius: 8,
+              padding: '12px',
+              borderRadius: '8px',
               alignItems: 'center',
             }}
           >
-            <text style={{ color: 'white', fontSize: 16 }}>Share Text</text>
+            <text style={{ color: 'white', fontSize: '16px' }}>Share Text</text>
           </view>
 
           <view
             bindtap={handleShareFile}
             style={{
               backgroundColor: '#6f42c1',
-              padding: 12,
-              borderRadius: 8,
+              padding: '12px',
+              borderRadius: '8px',
               alignItems: 'center',
             }}
           >
-            <text style={{ color: 'white', fontSize: 16 }}>
+            <text style={{ color: 'white', fontSize: '16px' }}>
               Share File (PDF)
             </text>
           </view>

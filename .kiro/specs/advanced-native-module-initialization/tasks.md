@@ -2,7 +2,7 @@
 
 - [x] 1. Extend configuration data models for advanced initialization
   - Update AutolinkConfig.kt to include InitializationConfig and InitializationHook data classes
-  - Add JSON parsing support for new initialization fields in lynx.ext.json
+  - Add JSON parsing support for new initialization fields in tiger.config.json
   - Implement backward compatibility handling for existing configurations
   - _Requirements: 2.1, 2.2, 5.1_
 
@@ -61,7 +61,7 @@
 - [ ] 4.1 Enhance ExtensionDiscovery to parse new configuration fields
   - Update parseExtension method to handle initialization configuration
   - Add validation calls for new configuration fields during discovery
-  - Implement backward compatibility for existing lynx.ext.json files
+  - Implement backward compatibility for existing tiger.config.json files
   - _Requirements: 2.1, 2.2, 5.1_
 
 - [ ] 4.2 Update LynxExtensionBuildPlugin to use enhanced registry generation
@@ -77,8 +77,8 @@
   - _Requirements: 1.1, 2.1, 3.1, 4.1_
 
 - [ ] 5. Create example configuration and update documentation
-- [ ] 5.1 Create example lynx.ext.json with advanced initialization
-  - Update e2e-test/lynxjs-linking-module/lynx.ext.json with lifecycle callback configuration
+- [ ] 5.1 Create example tiger.config.json with advanced initialization
+  - Update e2e-test/lynxjs-linking-module/tiger.config.json with lifecycle callback configuration
   - Add comprehensive examples for different initialization hook types
   - Include dependency declaration examples
   - _Requirements: 1.1, 2.1, 3.1, 4.1_
@@ -90,7 +90,7 @@
   - _Requirements: 1.1, 1.2, 1.3_
 
 - [ ]\* 5.3 Write end-to-end integration tests
-  - Test complete workflow from lynx.ext.json to working Android application
+  - Test complete workflow from tiger.config.json to working Android application
   - Verify ActivityLifecycleCallbacks are properly registered and functional
   - Test error handling and recovery scenarios
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
@@ -109,7 +109,7 @@
   - _Requirements: 2.1, 5.1, 5.2_
 
 - [ ]\* 6.3 Write backward compatibility tests
-  - Test that existing lynx.ext.json files work unchanged
+  - Test that existing tiger.config.json files work unchanged
   - Test that mixed old/new configuration scenarios work correctly
   - Verify no regression in existing functionality
   - _Requirements: 2.2, 4.4_

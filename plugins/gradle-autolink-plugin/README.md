@@ -1,13 +1,13 @@
-# Lynx Autolink Gradle Plugin
+# TigerModule Autolink Gradle Plugin
 
-Gradle plugins for automatic discovery and integration of Lynx native extensions in Android projects.
+Gradle plugins for automatic discovery and integration of TigerModule native extensions in Android projects.
 
 ## Overview
 
 This plugin provides two Gradle plugins:
 
-- **Settings Plugin** (`org.lynxsdk.extension-settings`): Discovers Lynx extensions in `node_modules`
-- **Build Plugin** (`org.lynxsdk.extension-build`): Generates registry code and integrates extensions
+- **Settings Plugin** (`com.tigermodule.extension-settings`): Discovers TigerModule extensions in `node_modules`
+- **Build Plugin** (`com.tigermodule.extension-build`): Generates registry code and integrates extensions
 
 ## Installation
 
@@ -33,7 +33,7 @@ pluginManagement {
 }
 
 plugins {
-    id("org.lynxsdk.extension-settings") version "0.0.1"
+    id("com.tigermodule.extension-settings") version "0.0.1"
 }
 ```
 
@@ -42,7 +42,7 @@ plugins {
 ```kotlin
 plugins {
     id("com.android.application")
-    id("org.lynxsdk.extension-build") version "0.0.1"
+    id("com.tigermodule.extension-build") version "0.0.1"
 }
 ```
 
@@ -50,12 +50,12 @@ plugins {
 
 ### Discovering Extensions
 
-The plugin automatically scans `node_modules` for packages containing `lynx.ext.json`.
+The plugin automatically scans `node_modules` for packages containing `tiger.config.json`.
 
 To list discovered extensions:
 
 ```bash
-./gradlew listLynxExtensions
+./gradlew listTigerModuleExtensions
 ```
 
 ### Generating Registry
@@ -63,7 +63,7 @@ To list discovered extensions:
 The plugin generates `ExtensionRegistry.kt` during the build:
 
 ```bash
-./gradlew generateLynxExtensionRegistry
+./gradlew generateTigerModuleExtensionRegistry
 ```
 
 ### Using in Your App
@@ -71,7 +71,7 @@ The plugin generates `ExtensionRegistry.kt` during the build:
 In your Android application code:
 
 ```kotlin
-import com.lynx.autolink.generated.ExtensionRegistry
+import com.tigermodule.autolink.generated.ExtensionRegistry
 
 class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -87,22 +87,22 @@ class MainActivity : Activity() {
 
 ## How It Works
 
-1. **Settings Phase**: The settings plugin scans `node_modules` for `lynx.ext.json` files
+1. **Settings Phase**: The settings plugin scans `node_modules` for `tiger.config.json` files
 2. **Configuration Phase**: Discovered extensions are stored in project extra properties
 3. **Build Phase**: The build plugin generates `ExtensionRegistry.kt` with registration code
 4. **Compilation**: Generated code is added to Android source sets and compiled
 
 ## Extension Format
 
-Extensions must have a `lynx.ext.json` file:
+Extensions must have a `tiger.config.json` file:
 
 ```json
 {
-  "name": "@lynxjs/my-extension",
+  "name": "@tigermodule/my-extension",
   "version": "1.0.0",
   "platforms": {
     "android": {
-      "packageName": "com.lynxjs.myextension",
+      "packageName": "com.tigermodule.myextension",
       "sourceDir": "android/src/main"
     }
   },

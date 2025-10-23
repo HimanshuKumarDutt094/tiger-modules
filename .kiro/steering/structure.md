@@ -27,7 +27,7 @@
 
 ## Generated Module Structure
 
-When `lynxjs-module init` creates a new module:
+When `tiger-module init` creates a new module:
 
 ```
 <modulename>/

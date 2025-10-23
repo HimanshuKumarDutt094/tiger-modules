@@ -140,7 +140,7 @@ describe("Extension Discovery and Registry Generation Integration", () => {
           config.elements = [`${pkg.module}Element`];
         }
 
-        writeFileSync(join(pkgDir, "lynx.ext.json"), JSON.stringify(config));
+        writeFileSync(join(pkgDir, "tiger.config.json"), JSON.stringify(config));
 
         writeFileSync(
           join(pkgDir, "package.json"),
@@ -285,7 +285,7 @@ describe("Extension Discovery and Registry Generation Integration", () => {
 
       // Create a package with multiple modules, elements, and services
       writeFileSync(
-        join(pkgDir, "lynx.ext.json"),
+        join(pkgDir, "tiger.config.json"),
         JSON.stringify({
           name: "@lynxjs/complete-package",
           version: "2.0.0",
@@ -401,7 +401,7 @@ describe("Extension Discovery and Registry Generation Integration", () => {
           : `com.test.${pkg.name}`;
 
         writeFileSync(
-          join(pkgDir, "lynx.ext.json"),
+          join(pkgDir, "tiger.config.json"),
           JSON.stringify({
             name: fullName,
             version: "1.0.0",
@@ -472,7 +472,7 @@ describe("Extension Discovery and Registry Generation Integration", () => {
       const validPkgDir = join(nodeModules, "valid-package");
       mkdirSync(validPkgDir, { recursive: true });
       writeFileSync(
-        join(validPkgDir, "lynx.ext.json"),
+        join(validPkgDir, "tiger.config.json"),
         JSON.stringify({
           name: "valid-package",
           version: "1.0.0",
@@ -503,13 +503,13 @@ describe("Extension Discovery and Registry Generation Integration", () => {
       // Create invalid package (bad JSON)
       const invalidPkgDir = join(nodeModules, "invalid-package");
       mkdirSync(invalidPkgDir, { recursive: true });
-      writeFileSync(join(invalidPkgDir, "lynx.ext.json"), "{ invalid json }");
+      writeFileSync(join(invalidPkgDir, "tiger.config.json"), "{ invalid json }");
 
       // Create another valid package
       const anotherValidPkgDir = join(nodeModules, "another-valid");
       mkdirSync(anotherValidPkgDir, { recursive: true });
       writeFileSync(
-        join(anotherValidPkgDir, "lynx.ext.json"),
+        join(anotherValidPkgDir, "tiger.config.json"),
         JSON.stringify({
           name: "another-valid",
           version: "1.0.0",
@@ -574,7 +574,7 @@ describe("Extension Discovery and Registry Generation Integration", () => {
         mkdirSync(pkgDir, { recursive: true });
 
         writeFileSync(
-          join(pkgDir, "lynx.ext.json"),
+          join(pkgDir, "tiger.config.json"),
           JSON.stringify({
             name: `package-${i}`,
             version: "1.0.0",
@@ -635,7 +635,7 @@ describe("Extension Discovery and Registry Generation Integration", () => {
         mkdirSync(pkgDir, { recursive: true });
 
         writeFileSync(
-          join(pkgDir, "lynx.ext.json"),
+          join(pkgDir, "tiger.config.json"),
           JSON.stringify({
             name: name,
             version: "1.0.0",
@@ -715,7 +715,7 @@ describe("Extension Discovery and Registry Generation Integration", () => {
         mkdirSync(pkgDir, { recursive: true });
 
         writeFileSync(
-          join(pkgDir, "lynx.ext.json"),
+          join(pkgDir, "tiger.config.json"),
           JSON.stringify({
             name: config.name,
             version: "1.0.0",

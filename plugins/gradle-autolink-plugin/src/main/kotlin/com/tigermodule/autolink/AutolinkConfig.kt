@@ -1,4 +1,4 @@
-package org.lynxsdk.autolink
+package com.tigermodule.autolink
 
 import com.google.gson.*
 import com.google.gson.reflect.TypeToken
@@ -34,12 +34,12 @@ data class NativeModuleConfig(
 )
 
 /**
- * Data classes representing lynx.ext.json configuration structure
+ * Data classes representing tiger.config.json configuration structure
  */
 data class AutolinkConfig(
     val name: String,
     val version: String,
-    val lynxVersion: String? = null,
+    val tigerModuleVersion: String? = null,
     val platforms: Platforms,
     val dependencies: List<String> = emptyList(),
     val nativeModules: List<NativeModuleConfig> = emptyList(),

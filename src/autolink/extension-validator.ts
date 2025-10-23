@@ -105,14 +105,14 @@ export class ExtensionValidator {
       });
     }
 
-    // Check lynx.ext.json exists (should always exist if discovered)
-    const configPath = join(extension.path, "lynx.ext.json");
+    // Check tiger.config.json exists (should always exist if discovered)
+    const configPath = join(extension.path, "tiger.config.json");
     if (!pathExistsSync(configPath)) {
       issues.push({
         severity: ValidationSeverity.ERROR,
         code: "MISSING_CONFIG",
-        message: "lynx.ext.json not found",
-        suggestion: "Create a lynx.ext.json configuration file",
+        message: "tiger.config.json not found",
+        suggestion: "Create a tiger.config.json configuration file",
         path: configPath,
       });
     }
@@ -123,7 +123,7 @@ export class ExtensionValidator {
         severity: ValidationSeverity.WARNING,
         code: "NAME_MISMATCH",
         message: `Config name (${extension.config.name}) doesn't match package name (${extension.name})`,
-        suggestion: "Ensure lynx.ext.json name matches package.json name",
+        suggestion: "Ensure tiger.config.json name matches package.json name",
       });
     }
 
@@ -191,7 +191,7 @@ export class ExtensionValidator {
         severity: ValidationSeverity.ERROR,
         code: "ANDROID_SOURCE_MISSING",
         message: `Android source directory not found: ${androidConfig.sourceDir}`,
-        suggestion: `Create the directory at ${sourceDir} or update sourceDir in lynx.ext.json`,
+        suggestion: `Create the directory at ${sourceDir} or update sourceDir in tiger.config.json`,
         path: sourceDir,
       });
     }
@@ -227,7 +227,7 @@ export class ExtensionValidator {
         severity: ValidationSeverity.ERROR,
         code: "IOS_SOURCE_MISSING",
         message: `iOS source directory not found: ${iosConfig.sourceDir}`,
-        suggestion: `Create the directory at ${sourceDir} or update sourceDir in lynx.ext.json`,
+        suggestion: `Create the directory at ${sourceDir} or update sourceDir in tiger.config.json`,
         path: sourceDir,
       });
     }
@@ -269,7 +269,7 @@ export class ExtensionValidator {
         severity: ValidationSeverity.ERROR,
         code: "WEB_ENTRY_MISSING",
         message: `Web entry file not found: ${webConfig.entry}`,
-        suggestion: `Create the entry file at ${entryFile} or update entry in lynx.ext.json`,
+        suggestion: `Create the entry file at ${entryFile} or update entry in tiger.config.json`,
         path: entryFile,
       });
     }
@@ -294,7 +294,7 @@ export class ExtensionValidator {
         code: "NO_LYNX_VERSION",
         message: "No LynxJS version requirement specified",
         suggestion:
-          'Add "lynxVersion" field to lynx.ext.json (e.g., ">=0.70.0")',
+          'Add "lynxVersion" field to tiger.config.json (e.g., ">=0.70.0")',
       });
     }
 
@@ -392,7 +392,7 @@ export class ExtensionValidator {
         severity: ValidationSeverity.WARNING,
         code: "NO_EXPORTS",
         message: "No native modules, elements, or services declared",
-        suggestion: "Add nativeModules, elements, or services to lynx.ext.json",
+        suggestion: "Add nativeModules, elements, or services to tiger.config.json",
       });
     }
 

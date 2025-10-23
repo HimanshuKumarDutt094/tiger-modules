@@ -99,7 +99,7 @@ export async function initModule(
   writeFileSync(
     path.join(dir, moduleFile),
     `// ${moduleName} module interface
-    import {type TigerModule } from "lynxjs-module/runtime";
+    import {type TigerModule } from "tiger-module/runtime";
 export interface ${moduleName}Module extends TigerModule {
   helloWorld(name: string): string;
 }
@@ -134,15 +134,15 @@ export interface ${moduleName}Module extends TigerModule {
         "./package.json": "./package.json",
       },
       scripts: {
-        build: "lynxjs-module build",
+        build: "tiger-module build",
         dev: "tsdown --watch",
         typecheck: "tsc --noEmit",
         release: "bumpp && npm publish",
-        codegen: "lynxjs-module codegen",
+        codegen: "tiger-module codegen",
       },
       devDependencies: {
         "@types/node": "^24.8.1",
-        "lynxjs-module": "latest",
+        "tiger-module": "latest",
         tsdown: "^0.15.8",
         typescript: "^5.9.3",
       },
@@ -195,9 +195,9 @@ export default defineConfig([
 ])`,
   );
 
-  // --- lynx.ext.ts (autolink configuration) ---
+  // --- tiger.config.ts (autolink configuration) ---
   {
-    const configContent = `import { defineConfig } from 'lynxjs-module/config';
+    const configContent = `import { defineConfig } from 'tiger-module/config';
 
 export default defineConfig({
   name: '${projectName}',
@@ -230,7 +230,7 @@ export default defineConfig({
 });
 `;
 
-    writeFileSync(path.join(dir, "lynx.ext.ts"), configContent);
+    writeFileSync(path.join(dir, "tiger.config.ts"), configContent);
 
     // Create platform directories
     mkdirpSync(path.join(dir, "android", "src", "main"));
@@ -244,7 +244,7 @@ export default defineConfig({
       chalk.yellow(`  2. Update src/module.ts with your module interface`),
     );
     console.log(
-      chalk.yellow(`  3. Update lynx.ext.ts configuration if needed`),
+      chalk.yellow(`  3. Update tiger.config.ts configuration if needed`),
     );
     console.log(chalk.yellow(`  4. npm run codegen`));
     console.log(

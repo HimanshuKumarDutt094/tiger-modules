@@ -1,6 +1,6 @@
 /**
  * Configuration interfaces and types for LynxJS Autolink system
- * Defines the structure of lynx.ext.ts/lynx.ext.json configuration files
+ * Defines the structure of tiger.config.ts/tiger.config.json configuration files
  */
 
 /**
@@ -85,7 +85,7 @@ export interface WebConfig {
 
 /**
  * Main autolink configuration structure
- * Corresponds to lynx.ext.ts/lynx.ext.json file format
+ * Corresponds to tiger.config.ts/tiger.config.json file format
  */
 export interface LynxExtConfig {
   /** Package name (should match package.json name) */
@@ -159,8 +159,8 @@ export type AutolinkConfig = LynxExtConfig;
  *
  * @example
  * ```ts
- * // lynx.ext.ts
- * import { defineConfig } from 'lynxjs-module/config';
+ * // tiger.config.ts
+ * import { defineConfig } from 'tiger-module/config';
  *
  * export default defineConfig({
  *   name: 'my-extension',

@@ -56,7 +56,7 @@ Here's the layout of a common extension project which contains the source code o
 ```bash
 @lynx-js/button
 ├── README.md
-├── lynx.ext.json  # extension configuration file, which contains necessary configurations used by Autolink framework
+├── tiger.config.json  # extension configuration file, which contains necessary configurations used by Autolink framework
 ├── android  # source code for Android platform
 │   ├── build.gradle.kts
 │   ├── consumer-rules.pro
@@ -100,7 +100,7 @@ Here's the layout of a common extension project which contains the source code o
 
 ### Configuration File
 
-The extension package needs to add a "platforms" field to the specified configuration file (lynx.ext.json) to declare which platforms the current package supports and provide information for the packaging tool and compilation framework plugins. The basic format of the configuration file is as follows
+The extension package needs to add a "platforms" field to the specified configuration file (tiger.config.json) to declare which platforms the current package supports and provide information for the packaging tool and compilation framework plugins. The basic format of the configuration file is as follows
 
 > The "platforms" field is used to mark which platforms this package supports and add some required special configurations for each platform.
 

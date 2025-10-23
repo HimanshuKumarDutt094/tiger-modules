@@ -1,4 +1,4 @@
-import { defineConfig } from "lynxjs-module";
+import { defineConfig } from "tiger-module";
 export default defineConfig({
   name: "lynxjs-linking-module",
   version: "0.1.0",

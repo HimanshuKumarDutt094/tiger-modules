@@ -1,5 +1,5 @@
 /**
- * Configuration file parser for lynx.ext.json
+ * Configuration file parser for tiger.config.json
  * Handles parsing, validation, inheritance, and merging
  */
 
@@ -47,12 +47,12 @@ export interface ParseResult {
 }
 
 /**
- * Parses lynx.ext.json from a given directory
+ * Parses tiger.config.json from a given directory
  * @param packagePath - Path to the package directory
  * @returns Parse result with config and validation info
  */
 export function parseAutolinkConfig(packagePath: string): ParseResult {
-  const configPath = join(packagePath, "lynx.ext.json");
+  const configPath = join(packagePath, "tiger.config.json");
 
   // Check if file exists
   if (!existsSync(configPath)) {
@@ -65,7 +65,7 @@ export function parseAutolinkConfig(packagePath: string): ParseResult {
             ConfigErrorType.MISSING_FILE,
             undefined,
             `Configuration file not found: ${configPath}`,
-            "Create a lynx.ext.json file in the package root",
+            "Create a tiger.config.json file in the package root",
           ),
         ],
         warnings: [],
@@ -110,7 +110,7 @@ export function parseAutolinkConfig(packagePath: string): ParseResult {
               ConfigErrorType.INVALID_JSON,
               undefined,
               `Failed to parse JSON: ${error.message}`,
-              "Ensure lynx.ext.json contains valid JSON syntax",
+              "Ensure tiger.config.json contains valid JSON syntax",
             ),
           ],
           warnings: [],

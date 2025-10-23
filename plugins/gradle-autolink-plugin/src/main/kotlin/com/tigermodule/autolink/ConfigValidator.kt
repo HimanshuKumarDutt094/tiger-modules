@@ -1,10 +1,10 @@
-package org.lynxsdk.autolink
+package com.tigermodule.autolink
 
 import org.gradle.api.GradleException
 import java.io.File
 
 /**
- * Validates Lynx extension configuration and provides helpful error messages
+ * Validates TigerModule extension configuration and provides helpful error messages
  */
 class ConfigValidator {
     
@@ -29,21 +29,21 @@ class ConfigValidator {
         if (extension.name.isBlank()) {
             throw GradleException(
                 "Extension has empty name field. " +
-                "Ensure 'name' is set in lynx.ext.json at ${extension.path}"
+                "Ensure 'name' is set in tiger.config.json at ${extension.path}"
             )
         }
         
         if (extension.version.isBlank()) {
             throw GradleException(
                 "Extension '${extension.name}' has empty version field. " +
-                "Ensure 'version' is set in lynx.ext.json"
+                "Ensure 'version' is set in tiger.config.json"
             )
         }
         
         if (extension.config.platforms.android == null) {
             throw GradleException(
                 "Extension '${extension.name}' is missing Android platform configuration. " +
-                "Add 'platforms.android' section to lynx.ext.json"
+                "Add 'platforms.android' section to tiger.config.json"
             )
         }
     }
@@ -56,7 +56,7 @@ class ConfigValidator {
         if (androidConfig.packageName.isBlank()) {
             throw GradleException(
                 "Extension '$extensionName' has empty Android packageName. " +
-                "Set 'platforms.android.packageName' in lynx.ext.json\n" +
+                "Set 'platforms.android.packageName' in tiger.config.json\n" +
                 "Example: \"packageName\": \"com.example.myextension\""
             )
         }
@@ -78,7 +78,7 @@ class ConfigValidator {
             throw GradleException(
                 "Extension '$extensionName' has invalid language: '${androidConfig.language}'\n" +
                 "Language must be either 'kotlin' or 'java'\n" +
-                "Set 'platforms.android.language' in lynx.ext.json"
+                "Set 'platforms.android.language' in tiger.config.json"
             )
         }
     }

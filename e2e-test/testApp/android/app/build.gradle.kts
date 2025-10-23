@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
-    id("org.lynxsdk.extension-build")
+    id("com.tigermodule.extension-build")
 }
 
 android {

@@ -4,7 +4,7 @@ plugins {
     `maven-publish`
 }
 
-group = "org.lynxsdk"
+group = "com.tigermodule"
 version = "0.0.1"
 
 repositories {
@@ -26,17 +26,17 @@ dependencies {
 
 gradlePlugin {
     plugins {
-        create("lynxExtensionSettings") {
-            id = "org.lynxsdk.extension-settings"
-            implementationClass = "org.lynxsdk.autolink.LynxExtensionSettingsPlugin"
-            displayName = "Lynx Extension Settings Plugin"
-            description = "Gradle settings plugin for discovering and configuring Lynx extensions"
+        create("tigerModuleExtensionSettings") {
+            id = "com.tigermodule.extension-settings"
+            implementationClass = "com.tigermodule.autolink.TigerModuleExtensionSettingsPlugin"
+            displayName = "TigerModule Extension Settings Plugin"
+            description = "Gradle settings plugin for discovering and configuring TigerModule extensions"
         }
-        create("lynxExtensionBuild") {
-            id = "org.lynxsdk.extension-build"
-            implementationClass = "org.lynxsdk.autolink.LynxExtensionBuildPlugin"
-            displayName = "Lynx Extension Build Plugin"
-            description = "Gradle build plugin for integrating Lynx extensions into Android projects"
+        create("tigerModuleExtensionBuild") {
+            id = "com.tigermodule.extension-build"
+            implementationClass = "com.tigermodule.autolink.TigerModuleExtensionBuildPlugin"
+            displayName = "TigerModule Extension Build Plugin"
+            description = "Gradle build plugin for integrating TigerModule extensions into Android projects"
         }
     }
 }
