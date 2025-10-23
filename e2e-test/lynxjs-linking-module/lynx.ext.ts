@@ -1,0 +1,40 @@
+import { defineConfig } from "lynxjs-module";
+export default defineConfig({
+  name: "lynxjs-linking-module",
+  version: "0.1.0",
+  lynxVersion: ">=0.70.0",
+  platforms: {
+    android: {
+      packageName: "com.modules.linking",
+      sourceDir: "android/src/main",
+      buildTypes: ["debug", "release"],
+      language: "kotlin",
+      initialization: {
+        requiresApplicationContext: true,
+        hooks: [
+          {
+            type: "lifecycle_callbacks",
+            className: "LynxjsLinkingActivityListener",
+          },
+        ],
+        order: 1,
+      },
+    },
+    ios: {
+      sourceDir: "ios/src",
+      frameworks: ["Foundation"],
+    },
+    web: {
+      entry: "web/src/index.ts",
+    },
+  },
+  dependencies: [],
+  nativeModules: [
+    {
+      name: "LynxjsLinkingModule",
+      className: "LynxjsLinkingModule",
+    },
+  ],
+  elements: [],
+  services: [],
+});

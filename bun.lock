@@ -7,8 +7,8 @@
         "@clack/prompts": "^0.11.0",
         "@lynx-js/types": "^3.4.11",
         "fast-glob": "^3.2.12",
-        "fs-extra": "^11.3.2",
         "filepermission": "link:filepermission",
+        "fs-extra": "^11.3.2",
       },
       "devDependencies": {
         "@types/node": "^24.7.2",

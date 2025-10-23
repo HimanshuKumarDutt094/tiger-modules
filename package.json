@@ -5,13 +5,10 @@
   "type": "module",
   "license": "MIT",
   "bin": {
-    "lynxjs-module": "./dist/cli.js",
-    "lynxjs-module/codegen": "./dist/codegen.js",
-    "lynxjs-module/generate-install": "./dist/cli/generate-install.js"
+    "lynxjs-module": "./dist/cli.js"
   },
   "files": [
     "dist",
-    "dist/cli",
     "templates"
   ],
   "main": "./dist/index.js",
@@ -20,7 +17,9 @@
     ".": "./dist/index.js",
     "./cli": "./dist/cli.js",
     "./codegen": "./dist/codegen.js",
-    "./install": "./dist/install.js",
+    "./config": "./dist/config.js",
+    "./config-loader": "./dist/config-loader.js",
+    "./runtime": "./dist/runtime.js",
     "./package.json": "./package.json"
   },
   "scripts": {

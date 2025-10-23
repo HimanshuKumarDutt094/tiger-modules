@@ -110,7 +110,7 @@ The lynxjs-module system provides a complete toolkit for developing, building, a
 
 #### Acceptance Criteria
 
-1. WHEN THE Installer_System patches iOS for Objective-C projects, THE Installer_System SHALL search for files matching "*-Bridging-Header.h"
+1. WHEN THE Installer_System patches iOS for Objective-C projects, THE Installer_System SHALL search for files matching "\*-Bridging-Header.h"
 2. WHEN THE Installer_System finds bridging headers, THE Installer_System SHALL add "#import <Lynx/LynxModule.h>" if not present
 3. WHEN THE Installer_System adds Lynx import, THE Installer_System SHALL add "#import \"ModuleName.h\"" for the module
 4. WHEN THE Installer_System modifies bridging headers, THE Installer_System SHALL preserve existing content

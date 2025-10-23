@@ -47,6 +47,7 @@ npm run build          # Build module with tsdown
 ## Code Generation
 
 Uses ts-morph to parse TypeScript interfaces and generate:
+
 - Kotlin code for Android (package structure follows androidPackageName)
 - Swift code for iOS (placed in ios/modules/)
 - TypeScript declarations (global NativeModules interface augmentation)

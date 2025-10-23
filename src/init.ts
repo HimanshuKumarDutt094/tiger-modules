@@ -1,15 +1,20 @@
 #!/usr/bin/env node
 import { mkdirpSync, writeJsonSync } from "fs-extra/esm";
-import path from "node:path";
-import { text, cancel, isCancel } from "@clack/prompts";
+import path from "path";
+import { text, cancel, isCancel, select } from "@clack/prompts";
 import chalk from "chalk";
-import { writeFileSync } from "node:fs";
+import { writeFileSync } from "fs";
+import { validateAutolinkConfig } from "./autolink/validation.js";
 /// <reference path="./module.global.d.ts" />
 const pascalCheck = (input: string) => /^[A-Z][A-Za-z]*$/.test(input);
 const packageNameCheck = (input: string) => /^[a-z0-9-]+$/.test(input);
 
-export async function initModule(providedProjectName?: string, providedModuleName?: string) {
-  console.log(chalk.cyanBright("\n✨ Create Lynx Module CLI\n"));
+export async function initModule(
+  providedProjectName?: string,
+  providedModuleName?: string,
+  language?: string,
+) {
+  console.log(chalk.cyanBright("\n✨ Create Lynx Autolink Extension\n"));
 
   let projectName = providedProjectName;
   let moduleName = providedModuleName;
@@ -20,7 +25,8 @@ export async function initModule(providedProjectName?: string, providedModuleNam
       message: "Project name (e.g. lynxjs-linking-module):",
       validate(value) {
         if (!value) return "Project name required";
-        if (!packageNameCheck(value)) return "Must be lowercase with hyphens only (e.g. my-module)";
+        if (!packageNameCheck(value))
+          return "Must be lowercase with hyphens only (e.g. my-module)";
       },
     });
     if (isCancel(answer)) return cancel("Cancelled");
@@ -28,7 +34,9 @@ export async function initModule(providedProjectName?: string, providedModuleNam
   } else {
     // validate provided project name
     if (!packageNameCheck(projectName)) {
-      console.error("Project name must be lowercase with hyphens only (e.g. lynxjs-linking-module)");
+      console.error(
+        "Project name must be lowercase with hyphens only (e.g. lynxjs-linking-module)",
+      );
       process.exit(1);
     }
   }
@@ -64,6 +72,21 @@ export async function initModule(providedProjectName?: string, providedModuleNam
   });
   if (isCancel(description)) return cancel("Cancelled");
 
+  // Get language preference
+  let selectedLanguage = language || "kotlin";
+  if (!language) {
+    const languageAnswer = await select({
+      message: "Select Android language:",
+      options: [
+        { value: "kotlin", label: "Kotlin (recommended)" },
+        { value: "java", label: "Java" },
+      ],
+      initialValue: "kotlin",
+    });
+    if (isCancel(languageAnswer)) return cancel("Cancelled");
+    selectedLanguage = String(languageAnswer);
+  }
+
   if (!moduleName) throw new Error("moduleName missing");
   if (!projectName) throw new Error("projectName missing");
 
@@ -76,16 +99,16 @@ export async function initModule(providedProjectName?: string, providedModuleNam
   writeFileSync(
     path.join(dir, moduleFile),
     `// ${moduleName} module interface
-    import {type TigerModule } from "lynxjs-module";
+    import {type TigerModule } from "lynxjs-module/runtime";
 export interface ${moduleName}Module extends TigerModule {
   helloWorld(name: string): string;
 }
-`
+`,
   );
   const srcFile = "src/index.ts";
   writeFileSync(
     path.join(dir, srcFile),
-    `import { ${moduleName}Module } from "./module";`
+    `import { ${moduleName}Module } from "./module";`,
   );
   // --- package.json ---
   writeJsonSync(
@@ -127,7 +150,7 @@ export interface ${moduleName}Module extends TigerModule {
         "@lynx-js/types": "^3.4.11",
       },
     },
-    { spaces: 2 }
+    { spaces: 2 },
   );
 
   // --- tsconfig.json ---
@@ -153,26 +176,9 @@ export interface ${moduleName}Module extends TigerModule {
       },
       include: ["src", "src/typing.d.ts", "src/global.d.ts"],
     },
-    { spaces: 2 }
+    { spaces: 2 },
   );
 
-  // --- module.config.ts ---
-  writeFileSync(
-    path.join(dir, "module.config.ts"),
-    `export interface ModuleConfig {
-  moduleName: string;
-  androidPackageName: string;
-  description: string;
-  moduleFile: string;
-}
-export const config: ModuleConfig = {
-  moduleName: "${moduleName}",
-  androidPackageName: "${androidPackageName}",
-  description: "${description}",
-  moduleFile: "./src/index.ts",
-};
-`
-  );
   // --- tsdown.config.ts ---
   writeFileSync(
     path.join(dir, "tsdown.config.ts"),
@@ -182,20 +188,77 @@ export default defineConfig([
   {
     entry: {
       index: './src/index.ts',
-      config: './module.config.ts'
     },
     platform: 'neutral',
     dts: true,
   },
-])`
+])`,
   );
-  console.log(chalk.greenBright("\n✅ Scaffold created!"));
-  console.log(chalk.cyanBright("\nNext steps:"));
-  console.log(chalk.yellow(`  1. cd ${projectName}`));
-  console.log(chalk.yellow(`  2. Update src/module.ts with your module interface`));
-  console.log(chalk.yellow(`  3. npm run codegen`));
-  console.log(chalk.yellow(`  4. Update ${moduleName}.kt / ${moduleName}.swift with native implementations`));
-  console.log(chalk.yellow(`  5. npm run build`));
+
+  // --- lynx.ext.ts (autolink configuration) ---
+  {
+    const configContent = `import { defineConfig } from 'lynxjs-module/config';
+
+export default defineConfig({
+  name: '${projectName}',
+  version: '0.1.0',
+  lynxVersion: '>=0.70.0',
+  platforms: {
+    android: {
+      packageName: '${androidPackageName}',
+      sourceDir: 'android/src/main',
+      buildTypes: ['debug', 'release'],
+      language: '${selectedLanguage}'
+    },
+    ios: {
+      sourceDir: 'ios/src',
+      frameworks: ['Foundation']
+    },
+    web: {
+      entry: 'web/src/index.ts'
+    }
+  },
+  dependencies: [],
+  nativeModules: [
+    {
+      name: '${moduleName}',
+      className: '${moduleName}Module'
+    }
+  ],
+  elements: [],
+  services: []
+});
+`;
+
+    writeFileSync(path.join(dir, "lynx.ext.ts"), configContent);
+
+    // Create platform directories
+    mkdirpSync(path.join(dir, "android", "src", "main"));
+    mkdirpSync(path.join(dir, "ios", "src"));
+    mkdirpSync(path.join(dir, "web", "src"));
+
+    console.log(chalk.greenBright("\n✅ Autolink extension scaffold created!"));
+    console.log(chalk.cyanBright("\nNext steps:"));
+    console.log(chalk.yellow(`  1. cd ${projectName}`));
+    console.log(
+      chalk.yellow(`  2. Update src/module.ts with your module interface`),
+    );
+    console.log(
+      chalk.yellow(`  3. Update lynx.ext.ts configuration if needed`),
+    );
+    console.log(chalk.yellow(`  4. npm run codegen`));
+    console.log(
+      chalk.yellow(
+        `  5. Implement native code in android/, ios/, and web/ directories`,
+      ),
+    );
+    console.log(chalk.yellow(`  6. npm run build`));
+    console.log(
+      chalk.yellow(
+        `  7. Publish to npm - extensions will auto-integrate via Autolink!`,
+      ),
+    );
+  }
 }
 
 // Allow running directly for development

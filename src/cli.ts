@@ -8,30 +8,41 @@ const program = new Command();
 
 program
   .name("lynxjs-module")
-  .description("CLI for LynxJS native modules")
+  .description("CLI for LynxJS autolink extensions")
   .version("0.1.0")
   .helpOption("-h, --help", "display help for command");
 
 // init command: accepts optional project name and module name
 program
   .command("init [projectName] [moduleName]")
-  .description("Scaffold a new LynxJS module")
-  .action(async (projectName?: string, moduleName?: string) => {
-    await initModule(projectName, moduleName);
-  });
+  .description("Scaffold a new LynxJS autolink extension")
+  .option(
+    "--language <language>",
+    "Android language (kotlin or java)",
+    "kotlin",
+  )
+  .action(
+    async (
+      projectName?: string,
+      moduleName?: string,
+      options?: { language?: string },
+    ) => {
+      await initModule(projectName, moduleName, options?.language);
+    },
+  );
 
 // codegen command
 program
   .command("codegen")
-  .description("Run codegen inside a module")
+  .description("Generate native platform code from TypeScript module interface")
   .action(async () => {
     await runCodegen();
   });
 
-// build command (placeholder for future implementation)
+// build command
 program
   .command("build")
-  .description("Build the module")
+  .description("Build the extension package for distribution")
   .action(async () => {
     await buildModule();
   });

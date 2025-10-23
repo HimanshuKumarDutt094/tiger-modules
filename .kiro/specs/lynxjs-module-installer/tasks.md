@@ -10,18 +10,15 @@
     - Verify tsdown compiles module.config.ts to dist/config.js
     - Add logging for config compilation status
     - _Requirements: 3.1, 3.2_
-  
   - [x] 2.2 Enhance directory copying with better error handling
     - Add existence checks before copying android/ and ios/
     - Log detailed copy operations for debugging
     - Handle edge cases (empty directories, symlinks)
     - _Requirements: 3.2_
-  
   - [x] 2.3 Copy TypeScript declaration files to dist/
     - Find and copy {ModuleName}Module.d.ts files to dist/
     - Update package.json exports to include type declarations
     - _Requirements: 3.5_
-  
   - [x] 2.4 Improve dist/package.json generation
     - Ensure files array includes all necessary files
     - Set correct main/module/types paths
@@ -36,7 +33,6 @@
     - Copy files to host modules/ subdirectory
     - Implement idempotency check (skip if content identical)
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
-  
   - [x] 3.2 Integrate copyIOSSources into main install function
     - Call copyIOSSources after Android integration
     - Pass moduleName from config
@@ -50,7 +46,6 @@
     - Remove regex parsing of .ts files
     - Keep fallback to package.json
     - _Requirements: 4.2, 4.3, 11.1, 11.2, 11.3_
-  
   - [x] 4.2 Add better error messages for config loading
     - Log each config file attempt
     - Show which file was successfully loaded
@@ -65,7 +60,6 @@
     - Check for existing module registration to avoid duplicates
     - Use proper indentation matching existing code
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
-  
   - [ ] 5.2 Handle edge cases in Swift patching
     - Handle files with no existing registrations
     - Handle multiple registration blocks
@@ -80,7 +74,6 @@
     - Insert registerModule call after existing registrations
     - Check for existing module registration to avoid duplicates
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
-  
   - [ ] 6.2 Handle Swift-Objective-C interop
     - Detect Swift bridging header usage
     - Skip .h import for Swift modules
@@ -102,7 +95,6 @@
     - Call patchBridgingHeader if needed
     - Handle errors gracefully for each step
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
-  
   - [ ] 8.2 Integrate patchIOSRegistration into main install function
     - Replace existing iOS patching calls
     - Add comprehensive logging
@@ -117,7 +109,6 @@
     - Log copy operations (skipped vs performed)
     - Log patch operations (applied vs skipped)
     - _Requirements: 10.3, 10.4, 10.5_
-  
   - [ ] 9.2 Improve error messages
     - Provide actionable error messages
     - Include file paths in error messages
@@ -129,13 +120,11 @@
     - Ensure copyFileIfDifferent works correctly
     - Test with identical and different files
     - _Requirements: 12.1, 12.2_
-  
   - [ ] 10.2 Verify Android registration idempotency
     - Test multiple installer runs
     - Ensure no duplicate imports
     - Ensure no duplicate registrations
     - _Requirements: 12.3, 12.4, 12.5_
-  
   - [ ] 10.3 Verify iOS registration idempotency
     - Test multiple installer runs on Swift projects
     - Test multiple installer runs on Objective-C projects
@@ -149,34 +138,30 @@
   - Update exports map to include "./install" path
   - _Requirements: 3.3, 3.4_
 
-- [ ]* 12. Create comprehensive test suite
-  - [ ]* 12.1 Write unit tests for build command
+- [ ]\* 12. Create comprehensive test suite
+  - [ ]\* 12.1 Write unit tests for build command
     - Test tsdown execution
     - Test directory copying
     - Test install.js generation
     - Test package.json modification
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
-  
-  - [ ]* 12.2 Write unit tests for iOS file copying
+  - [ ]\* 12.2 Write unit tests for iOS file copying
     - Test copyIOSSources with various structures
     - Test finding host iOS directories
     - Test idempotency
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
-  
-  - [ ]* 12.3 Write unit tests for iOS registration patching
+  - [ ]\* 12.3 Write unit tests for iOS registration patching
     - Test patchSwiftRegister
     - Test patchObjectiveCRegister
     - Test patchBridgingHeader
     - Test duplicate detection
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 9.1, 9.2, 9.3, 9.4, 9.5_
-  
-  - [ ]* 12.4 Write integration tests for build process
+  - [ ]\* 12.4 Write integration tests for build process
     - Test full build flow
     - Verify dist/ structure
     - Verify all files present
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
-  
-  - [ ]* 12.5 Write integration tests for installer
+  - [ ]\* 12.5 Write integration tests for installer
     - Test Android Kotlin integration
     - Test Android Java integration
     - Test iOS Swift integration
@@ -184,7 +169,7 @@
     - Test idempotency for all platforms
     - _Requirements: 4.1, 4.2, 5.1, 5.2, 5.3, 5.4, 5.5, 6.1, 6.2, 6.3, 6.4, 6.5, 7.1, 7.2, 7.3, 7.4, 7.5, 8.1, 8.2, 8.3, 8.4, 8.5, 9.1, 9.2, 9.3, 9.4, 9.5, 12.1, 12.2, 12.3, 12.4, 12.5_
 
-- [ ]* 13. Update documentation
+- [ ]\* 13. Update documentation
   - Update README with build and install flow
   - Document module developer workflow
   - Document host developer experience
