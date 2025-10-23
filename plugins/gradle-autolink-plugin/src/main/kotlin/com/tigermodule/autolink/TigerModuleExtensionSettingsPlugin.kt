@@ -19,7 +19,7 @@ import org.gradle.api.Project
 class TigerModuleExtensionSettingsPlugin : Plugin<Settings> {
     
     override fun apply(settings: Settings) {
-        println("🔌 TigerModule Extension Settings Plugin v0.0.1")
+        println("🔌 TigerModule Extension Settings Plugin v${BuildConfig.VERSION}")
         println("   Scanning for TigerModule extensions...")
         
         // Discover extensions in node_modules

@@ -11,6 +11,25 @@ This plugin provides two Gradle plugins:
 
 ## Installation
 
+### From Gradle Plugin Portal
+
+In your Android project's `settings.gradle.kts`:
+
+```kotlin
+plugins {
+    id("com.tigermodule.extension-settings") version "0.1.0"
+}
+```
+
+In your Android project's `build.gradle.kts`:
+
+```kotlin
+plugins {
+    id("com.android.application")
+    id("com.tigermodule.extension-build") version "0.1.0"
+}
+```
+
 ### Local Development
 
 1. Build and publish to local Maven:
@@ -33,16 +52,7 @@ pluginManagement {
 }
 
 plugins {
-    id("com.tigermodule.extension-settings") version "0.0.1"
-}
-```
-
-3. In your Android project's `build.gradle.kts`:
-
-```kotlin
-plugins {
-    id("com.android.application")
-    id("com.tigermodule.extension-build") version "0.0.1"
+    id("com.tigermodule.extension-settings") version "0.1.0"
 }
 ```
 
@@ -130,6 +140,20 @@ Extensions must have a `tiger.config.json` file:
 ```bash
 ./gradlew publishToMavenLocal
 ```
+
+### Publishing to Gradle Plugin Portal
+
+1. Set up your API keys (see [PUBLISHING.md](PUBLISHING.md))
+2. Run the publish script:
+   ```bash
+   ./publish.sh
+   ```
+   Or manually:
+   ```bash
+   ./gradlew publishPlugins
+   ```
+
+For detailed publishing instructions, see [PUBLISHING.md](PUBLISHING.md) and [PUBLISHING_CHECKLIST.md](PUBLISHING_CHECKLIST.md).
 
 ## Requirements
 

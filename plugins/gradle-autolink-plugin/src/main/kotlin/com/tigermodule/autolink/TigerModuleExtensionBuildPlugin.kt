@@ -18,7 +18,7 @@ import java.io.File
 class TigerModuleExtensionBuildPlugin : Plugin<Project> {
     
     override fun apply(project: Project) {
-        println("🔌 TigerModule Extension Build Plugin v0.0.1")
+        println("🔌 TigerModule Extension Build Plugin v${BuildConfig.VERSION}")
         println("   Project: ${project.name}")
         
         // Get discovered extensions from settings plugin
