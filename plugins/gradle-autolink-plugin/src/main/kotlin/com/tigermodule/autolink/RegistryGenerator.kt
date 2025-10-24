@@ -1,6 +1,7 @@
 package com.tigermodule.autolink
 
 import java.io.File
+import java.security.MessageDigest
 
 /**
  * Generates ExtensionRegistry.kt for Android
@@ -8,6 +9,88 @@ import java.io.File
 class RegistryGenerator {
     
     private val validator = ConfigValidator()
+    
+    /**
+     * Generates a hash of the extension configurations to detect changes
+     * Uses raw config file content for reliable change detection
+     */
+    private fun generateExtensionsHash(extensions: List<ExtensionPackage>): String {
+        val content = extensions.sortedBy { it.name }.joinToString("\n") { ext ->
+            // Read the raw tiger.config.json content for hashing
+            val configContent = try {
+                val configFile = findTigerConfigFile(File(ext.path))
+                if (configFile?.exists() == true) {
+                    configFile.readText().trim()
+                } else {
+                    "${ext.name}:${ext.version}:no-config"
+                }
+            } catch (e: Exception) {
+                "${ext.name}:${ext.version}:error-reading-config"
+            }
+            
+            "${ext.name}:${ext.version}:$configContent"
+        }
+        
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hashBytes = digest.digest(content.toByteArray())
+        return hashBytes.joinToString("") { "%02x".format(it) }
+    }
+    
+    /**
+     * Finds the tiger.config.json file (prefers dist/ over root)
+     */
+    private fun findTigerConfigFile(packageDir: File): File? {
+        val distConfig = File(packageDir, "dist/tiger.config.json")
+        val rootConfig = File(packageDir, "tiger.config.json")
+        
+        return when {
+            distConfig.exists() -> distConfig
+            rootConfig.exists() -> rootConfig
+            else -> null
+        }
+    }
+    
+    /**
+     * Reads the stored hash from the registry file header comment
+     */
+    private fun readStoredHash(registryFile: File): String? {
+        if (!registryFile.exists()) return null
+        
+        return try {
+            registryFile.readLines()
+                .find { it.contains("Content-Hash:") }
+                ?.substringAfter("Content-Hash:")
+                ?.trim()
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
+    /**
+     * Checks if registry needs regeneration based on content hash
+     */
+    private fun shouldRegenerateRegistry(extensions: List<ExtensionPackage>, registryFile: File): Boolean {
+        if (!registryFile.exists()) {
+            println("   📝 Registry file doesn't exist, generating...")
+            return true
+        }
+        
+        val currentHash = generateExtensionsHash(extensions)
+        val storedHash = readStoredHash(registryFile)
+        
+        if (storedHash == null) {
+            println("   📝 No hash found in existing registry, regenerating...")
+            return true
+        }
+        
+        if (currentHash != storedHash) {
+            println("   📝 Extension configurations changed, regenerating...")
+            return true
+        }
+        
+        println("   ✅ Registry is up-to-date, skipping generation")
+        return false
+    }
     
     /**
      * Generates the ExtensionRegistry.kt file
@@ -202,11 +285,80 @@ class RegistryGenerator {
         // Ensure output directory exists
         outputDir.mkdirs()
         
-        // Write registry file
+        // Check if regeneration is needed
         val registryFile = File(outputDir, "ExtensionRegistry.kt")
-        registryFile.writeText(registryCode)
+        if (!shouldRegenerateRegistry(extensions, registryFile)) {
+            return
+        }
+        
+        // Generate content hash for the current extensions
+        val currentHash = generateExtensionsHash(extensions)
+        
+        // Add hash to the generated code header
+        val registryCodeWithHash = buildString {
+            appendLine("package $packageName")
+            appendLine()
+            appendLine("import android.content.Context")
+            appendLine("import android.app.Application")
+            appendLine("import com.lynx.tasm.LynxEnv")
+            appendLine("import com.lynx.tasm.behavior.Behavior")
+            appendLine("import com.lynx.tasm.behavior.LynxContext")
+            appendLine()
+            
+            // Import statements for discovered modules
+            extensions.forEach { ext ->
+                val androidConfig = ext.config.platforms.android ?: return@forEach
+                
+                if (ext.config.nativeModules.isNotEmpty()) {
+                    appendLine("// Native Modules from ${ext.name}")
+                    ext.config.nativeModules.forEach { moduleConfig ->
+                        // Generate fully qualified import: packageName.className
+                        appendLine("import ${androidConfig.packageName}.${moduleConfig.className}")
+                    }
+                }
+                
+                if (ext.config.elements.isNotEmpty()) {
+                    appendLine("// Elements from ${ext.name}")
+                    ext.config.elements.forEach { elementName ->
+                        appendLine("import ${androidConfig.packageName}.${elementName}")
+                    }
+                }
+                
+                if (ext.config.services.isNotEmpty()) {
+                    appendLine("// Services from ${ext.name}")
+                    ext.config.services.forEach { serviceName ->
+                        appendLine("import ${androidConfig.packageName}.${serviceName}")
+                    }
+                }
+                
+                appendLine()
+            }
+            
+            appendLine("/**")
+            appendLine(" * Auto-generated registry for TigerModule extensions")
+            appendLine(" * Generated by TigerModule Autolink Gradle Plugin v${BuildConfig.VERSION}")
+            appendLine(" * Content-Hash: $currentHash")
+            appendLine(" * ")
+            appendLine(" * This file is automatically generated. Do not edit manually.")
+            appendLine(" * ")
+            appendLine(" * Discovered extensions:")
+            extensions.forEach { ext ->
+                appendLine(" *   - ${ext.name}@${ext.version}")
+            }
+            appendLine(" */")
+            
+            // Add the rest of the original registryCode content (the object definition)
+            val objectStart = registryCode.indexOf("object ExtensionRegistry {")
+            if (objectStart != -1) {
+                append(registryCode.substring(objectStart))
+            }
+        }
+        
+        // Write registry file
+        registryFile.writeText(registryCodeWithHash)
         
         println("✅ Generated ExtensionRegistry.kt")
         println("   📁 ${registryFile.absolutePath}")
+        println("   🔍 Content hash: ${currentHash.take(8)}...")
     }
 }

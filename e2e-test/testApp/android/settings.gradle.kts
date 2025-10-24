@@ -14,7 +14,7 @@ pluginManagement {
 }
 
 plugins {
-    id("com.tigermodule.extension-settings") version "0.0.1"
+    id("io.github.himanshukumardutt094.extension-settings") version "1.0.0"
 }
 
 dependencyResolutionManagement {

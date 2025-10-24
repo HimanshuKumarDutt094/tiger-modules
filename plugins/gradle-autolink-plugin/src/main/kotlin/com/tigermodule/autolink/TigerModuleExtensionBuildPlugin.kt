@@ -3,6 +3,7 @@ package com.tigermodule.autolink
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import java.io.File
+import java.security.MessageDigest
 
 /**
  * Gradle Build plugin for TigerModule extension integration
@@ -16,6 +17,29 @@ import java.io.File
  * ```
  */
 class TigerModuleExtensionBuildPlugin : Plugin<Project> {
+    
+    /**
+     * Generates a hash of file content
+     */
+    private fun generateFileHash(file: File): String {
+        if (!file.exists()) return ""
+        
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hashBytes = digest.digest(file.readBytes())
+        return hashBytes.joinToString("") { "%02x".format(it) }
+    }
+    
+    /**
+     * Checks if source file needs to be copied based on content hash
+     */
+    private fun shouldCopyFile(sourceFile: File, destFile: File): Boolean {
+        if (!destFile.exists()) return true
+        
+        val sourceHash = generateFileHash(sourceFile)
+        val destHash = generateFileHash(destFile)
+        
+        return sourceHash != destHash
+    }
     
     override fun apply(project: Project) {
         println("🔌 TigerModule Extension Build Plugin v${BuildConfig.VERSION}")
@@ -82,9 +106,14 @@ class TigerModuleExtensionBuildPlugin : Plugin<Project> {
                             .forEach { sourceFile ->
                                 val destFile = File(destDir, sourceFile.name)
                                 destFile.parentFile.mkdirs()
-                                sourceFile.copyTo(destFile, overwrite = true)
-                                println("   ✓ Copied: ${sourceFile.name}")
-                                filesCopied = true
+                                
+                                if (shouldCopyFile(sourceFile, destFile)) {
+                                    sourceFile.copyTo(destFile, overwrite = true)
+                                    println("   ✓ Copied: ${sourceFile.name}")
+                                    filesCopied = true
+                                } else {
+                                    println("   ⏭ Skipped: ${sourceFile.name} (unchanged)")
+                                }
                             }
                     }
                     
@@ -95,9 +124,14 @@ class TigerModuleExtensionBuildPlugin : Plugin<Project> {
                             .forEach { sourceFile ->
                                 val destFile = File(destDir, sourceFile.name)
                                 destFile.parentFile.mkdirs()
-                                sourceFile.copyTo(destFile, overwrite = true)
-                                println("   ✓ Copied: ${sourceFile.name}")
-                                filesCopied = true
+                                
+                                if (shouldCopyFile(sourceFile, destFile)) {
+                                    sourceFile.copyTo(destFile, overwrite = true)
+                                    println("   ✓ Copied: ${sourceFile.name}")
+                                    filesCopied = true
+                                } else {
+                                    println("   ⏭ Skipped: ${sourceFile.name} (unchanged)")
+                                }
                             }
                     }
                     

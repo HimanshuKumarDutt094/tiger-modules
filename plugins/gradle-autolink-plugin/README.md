@@ -6,8 +6,8 @@ Gradle plugins for automatic discovery and integration of TigerModule native ext
 
 This plugin provides two Gradle plugins:
 
-- **Settings Plugin** (`com.tigermodule.extension-settings`): Discovers TigerModule extensions in `node_modules`
-- **Build Plugin** (`com.tigermodule.extension-build`): Generates registry code and integrates extensions
+- **Settings Plugin** (`io.github.himanshukumardutt094.extension-settings`): Discovers TigerModule extensions in `node_modules`
+- **Build Plugin** (`io.github.himanshukumardutt094.extension-build`): Generates registry code and integrates extensions
 
 ## Installation
 
@@ -17,7 +17,7 @@ In your Android project's `settings.gradle.kts`:
 
 ```kotlin
 plugins {
-    id("com.tigermodule.extension-settings") version "0.1.0"
+    id("io.github.himanshukumardutt094.extension-settings") version "1.0.0"
 }
 ```
 
@@ -26,7 +26,7 @@ In your Android project's `build.gradle.kts`:
 ```kotlin
 plugins {
     id("com.android.application")
-    id("com.tigermodule.extension-build") version "0.1.0"
+    id("io.github.himanshukumardutt094.extension-build") version "1.0.0"
 }
 ```
 
@@ -52,7 +52,7 @@ pluginManagement {
 }
 
 plugins {
-    id("com.tigermodule.extension-settings") version "0.1.0"
+    id("io.github.himanshukumardutt094.extension-settings") version "1.0.0"
 }
 ```
 
