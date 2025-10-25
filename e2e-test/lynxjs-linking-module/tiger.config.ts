@@ -9,16 +9,6 @@ export default defineConfig({
       sourceDir: "android/src/main",
       buildTypes: ["debug", "release"],
       language: "kotlin",
-      initialization: {
-        requiresApplicationContext: true,
-        hooks: [
-          {
-            type: "lifecycle_callbacks",
-            className: "LynxjsLinkingActivityListener",
-          },
-        ],
-        order: 1,
-      },
     },
     ios: {
       sourceDir: "ios/src",

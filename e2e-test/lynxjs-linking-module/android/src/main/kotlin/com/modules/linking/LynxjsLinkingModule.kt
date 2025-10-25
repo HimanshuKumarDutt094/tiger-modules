@@ -1,9 +1,13 @@
 package com.modules.linking
 
+import android.app.Activity
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import androidx.core.content.FileProvider
 import java.io.File
 import java.net.URLConnection
@@ -17,6 +21,59 @@ class LynxjsLinkingModule(context: Context) : LynxModule(context) {
 
   companion object {
     var initialUrl: String? = null
+    private var installed = false
+    private var callbacks: Application.ActivityLifecycleCallbacks? = null
+    private const val TAG = "LynxjsLinkingModule"
+  }
+
+  /**
+   * Initialize the module with Application context to register lifecycle callbacks.
+   * This method is automatically called by the autolink system when the module is registered.
+   */
+  fun init(ctx: Context) {
+    if (installed) return
+    
+    val app = (ctx.applicationContext as? Application)
+      ?: throw IllegalArgumentException("Context must be Application or provide applicationContext")
+    
+    if (callbacks == null) {
+      callbacks = object : Application.ActivityLifecycleCallbacks {
+        override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+          onReceiveURL(activity.intent)
+        }
+
+        override fun onActivityStarted(activity: Activity) {}
+
+        override fun onActivityResumed(activity: Activity) {
+          // If an activity receives a new intent via onNewIntent and updates its intent,
+          // we can capture it here when the activity is resumed.
+          onReceiveURL(activity.intent)
+        }
+
+        override fun onActivityPaused(activity: Activity) {}
+        override fun onActivityStopped(activity: Activity) {}
+        override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+        override fun onActivityDestroyed(activity: Activity) {}
+      }
+    }
+    
+    // Unregister first to avoid duplicate registrations
+    app.unregisterActivityLifecycleCallbacks(callbacks!!)
+    app.registerActivityLifecycleCallbacks(callbacks!!)
+    installed = true
+    Log.d(TAG, "LynxjsLinkingModule initialized with lifecycle callbacks")
+  }
+
+  private fun onReceiveURL(intent: Intent?) {
+    try {
+      val data: Uri? = intent?.data
+      if (data != null) {
+        initialUrl = data.toString()
+        Log.d(TAG, "Captured initial URL: ${data}")
+      }
+    } catch (e: Exception) {
+      Log.e(TAG, "Error capturing URL from intent", e)
+    }
   }
 
   private fun getContext(): Context {

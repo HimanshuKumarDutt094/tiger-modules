@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The current Lynx autolink system only supports basic native module registration through simple class instantiation. However, many native modules require complex initialization patterns such as registering lifecycle callbacks, setting up global listeners, or performing application-level configuration. This feature will extend the autolink system to support advanced initialization patterns while maintaining backward compatibility.
+The current Lynx autolink system only supports basic native module registration through simple class instantiation. However, many native modules require complex initialization patterns such as registering lifecycle callbacks, setting up global listeners, or performing application-level configuration. The current approach requires separate activity listener classes and rigid configuration, making it difficult to maintain and extend. This feature will extend the autolink system to support self-contained module initialization where modules handle their own setup internally, eliminating the need for external configuration and separate listener classes.
 
 ## Glossary
 
@@ -18,27 +18,27 @@ The current Lynx autolink system only supports basic native module registration 
 
 ### Requirement 1
 
-**User Story:** As a native module developer, I want to register ActivityLifecycleCallbacks during module initialization, so that my module can respond to application lifecycle events.
+**User Story:** As a native module developer, I want my module to handle its own ActivityLifecycleCallbacks registration internally through an init method, so that I don't need external configuration or separate listener classes.
 
 #### Acceptance Criteria
 
-1. WHEN a native module declares lifecycle callback requirements in tiger.config.json, THE Extension_Registry SHALL register the callbacks during setupGlobal execution
-2. WHEN the Application context is available during setupGlobal, THE Extension_Registry SHALL pass the context to modules requiring lifecycle access
-3. WHEN a module fails to register lifecycle callbacks, THE Extension_Registry SHALL log the error and continue with other modules
-4. WHERE a module requires Application context, THE Extension_Registry SHALL validate context type before registration
-5. WHILE registering lifecycle callbacks, THE Extension_Registry SHALL handle exceptions gracefully without breaking other module registrations
+1. WHEN a native module defines an init method with Context parameter, THE Extension_Registry SHALL call the init method during module registration
+2. WHEN the init method is called, THE Extension_Registry SHALL pass the Application context as a parameter
+3. WHEN a module's init method fails, THE Extension_Registry SHALL log the error and continue with other modules
+4. WHERE a module requires Application context, THE Extension_Registry SHALL validate context type before calling init
+5. WHILE calling init methods, THE Extension_Registry SHALL handle exceptions gracefully without breaking other module registrations
 
 ### Requirement 2
 
-**User Story:** As a native module developer, I want to define custom initialization logic in my module configuration, so that complex setup requirements are handled automatically by the autolink system.
+**User Story:** As a native module developer, I want to eliminate external configuration requirements by handling all initialization logic within my module class, so that the autolink system can automatically detect and call my initialization method.
 
 #### Acceptance Criteria
 
-1. WHEN a module defines initialization hooks in tiger.config.json, THE Extension_Registry SHALL execute the hooks during module registration
-2. WHEN initialization hooks are present, THE Extension_Registry SHALL call the hooks before standard module registration
-3. IF initialization hooks fail, THEN THE Extension_Registry SHALL log the failure and skip that module's registration
-4. WHERE multiple initialization hooks are defined, THE Extension_Registry SHALL execute them in the specified order
-5. WHILE executing initialization hooks, THE Extension_Registry SHALL provide access to the Application context
+1. WHEN a module class contains an init method, THE Extension_Registry SHALL automatically detect and call it during registration
+2. WHEN the init method is detected, THE Extension_Registry SHALL call it before standard module registration
+3. IF the init method fails, THEN THE Extension_Registry SHALL log the failure and skip that module's registration
+4. WHERE no init method exists, THE Extension_Registry SHALL fall back to standard constructor-based registration
+5. WHILE calling init methods, THE Extension_Registry SHALL ensure proper error isolation between modules
 
 ### Requirement 3
 
@@ -54,24 +54,24 @@ The current Lynx autolink system only supports basic native module registration 
 
 ### Requirement 4
 
-**User Story:** As a native module developer, I want to specify static initialization methods in my module class, so that the autolink system can call custom setup logic without requiring constructor modifications.
+**User Story:** As a native module developer, I want to use instance-based init methods instead of static methods, so that my module can maintain state and handle lifecycle callbacks more naturally.
 
 #### Acceptance Criteria
 
-1. WHEN a module class defines a static initialize method, THE Extension_Registry SHALL call the method during registration
-2. WHEN the initialize method requires Application context, THE Extension_Registry SHALL pass the context as a parameter
-3. IF the static initialize method throws an exception, THEN THE Extension_Registry SHALL catch and log the error
-4. WHERE no static initialize method exists, THE Extension_Registry SHALL fall back to standard constructor-based registration
-5. WHILE calling static initialize methods, THE Extension_Registry SHALL ensure proper error isolation between modules
+1. WHEN a module class defines an instance init method, THE Extension_Registry SHALL call the method after instantiation
+2. WHEN the init method requires Application context, THE Extension_Registry SHALL pass the context as a parameter
+3. IF the instance init method throws an exception, THEN THE Extension_Registry SHALL catch and log the error
+4. WHERE no init method exists, THE Extension_Registry SHALL fall back to standard constructor-based registration
+5. WHILE calling init methods, THE Extension_Registry SHALL ensure the module instance is properly initialized before registration
 
 ### Requirement 5
 
-**User Story:** As a build system maintainer, I want the gradle plugin to validate complex initialization requirements at build time, so that configuration errors are caught early in the development process.
+**User Story:** As a build system maintainer, I want the gradle plugin to automatically detect init methods in module classes, so that no manual configuration is required for advanced initialization patterns.
 
 #### Acceptance Criteria
 
-1. WHEN parsing tiger.config.json files, THE Config_Validator SHALL validate initialization hook syntax and requirements
-2. WHEN modules declare Application context requirements, THE Config_Validator SHALL verify the module class supports the required initialization pattern
-3. IF invalid initialization configuration is detected, THEN THE Config_Validator SHALL provide specific error messages with correction suggestions
+1. WHEN scanning module classes, THE Extension_Discovery SHALL detect init methods with Context parameters automatically
+2. WHEN modules contain init methods, THE Extension_Discovery SHALL mark them for advanced initialization in the registry
+3. IF init method signatures are invalid, THEN THE Extension_Discovery SHALL provide specific error messages with correction suggestions
 4. WHERE dependency declarations are present, THE Config_Validator SHALL validate dependency names and versions
-5. WHILE validating module configurations, THE Config_Validator SHALL check for common initialization anti-patterns and warn developers
+5. WHILE scanning module classes, THE Extension_Discovery SHALL check for common initialization anti-patterns and warn developers

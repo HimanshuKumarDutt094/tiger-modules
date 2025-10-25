@@ -9,11 +9,10 @@ import { validateAutolinkConfig } from "./autolink/validation.js";
 
 // Load config from tiger.config.ts/js/json
 async function loadModuleConfig(): Promise<{
-  moduleName: string;
   androidPackageName: string;
   srcFile: string;
   androidLanguage: string;
-  className: string;
+  nativeModules: Array<{ name: string; className: string }>;
 }> {
   console.log("📦 Loading autolink extension configuration");
   const { config: autolinkConfig, configFile } = await loadConfig();
@@ -24,35 +23,35 @@ async function loadModuleConfig(): Promise<{
     throw new Error(`${configFile} missing platforms.android.packageName`);
   }
 
-  // Extract module info from nativeModules array (supports both string[] and object[] formats)
-  const firstModule = autolinkConfig.nativeModules?.[0];
-  if (!firstModule) {
+  if (!autolinkConfig.nativeModules || autolinkConfig.nativeModules.length === 0) {
     throw new Error(`${configFile} missing nativeModules array or it's empty`);
   }
 
-  // Handle both legacy string format and new structured format
-  let moduleName: string;
-  let className: string;
-
-  if (typeof firstModule === "string") {
-    // Legacy format: just a string
-    moduleName = firstModule.replace(/Module$/, "");
-    className = firstModule;
-  } else {
-    // New structured format: object with name, className
-    moduleName = firstModule.name;
-    className = firstModule.className;
-  }
+  // Process all native modules (supports both string[] and object[] formats)
+  const nativeModules = autolinkConfig.nativeModules.map((module) => {
+    if (typeof module === "string") {
+      // Legacy format: just a string
+      return {
+        name: module.replace(/Module$/, ""),
+        className: module,
+      };
+    } else {
+      // New structured format: object with name, className
+      return {
+        name: module.name,
+        className: module.className,
+      };
+    }
+  });
 
   // Language is always from platform config
   const androidLanguage = autolinkConfig.platforms.android.language || "kotlin";
 
   return {
-    moduleName,
-    className,
     androidPackageName: autolinkConfig.platforms.android.packageName,
     srcFile: "./src/module.ts",
     androidLanguage,
+    nativeModules,
   };
 }
 
@@ -89,135 +88,172 @@ export async function runCodegen(): Promise<void> {
   const srcPath = path.resolve(config.srcFile);
   const sourceFile = project.addSourceFileAtPath(srcPath);
 
-  const interfaceDecl = sourceFile
+  // Find ALL interfaces extending TigerModule
+  const interfaceDecls = sourceFile
     .getInterfaces()
-    .find((i) => i.getExtends().some((e) => e.getText() === "TigerModule"));
+    .filter((i) => i.getExtends().some((e) => e.getText() === "TigerModule"));
 
-  if (!interfaceDecl) throw new Error("No interface extending TigerModule");
+  if (interfaceDecls.length === 0) {
+    throw new Error("No interfaces extending TigerModule found");
+  }
 
-  const methods = interfaceDecl.getMethods().map((m) => {
-    const name = m.getName();
-    const params = m.getParameters().map((p) => {
-      const paramName = p.getName();
-      const isOptional = p.isOptional();
-      const typeNode = p.getTypeNode();
-      const typeText = typeNode ? typeNode.getText() : p.getType().getText();
-      return { paramName, isOptional, typeText };
+  console.log(`📋 Found ${interfaceDecls.length} module interface(s)`);
+
+  // Create a map of interface name to methods for easy lookup
+  const interfaceMethodsMap = new Map();
+  interfaceDecls.forEach((interfaceDecl) => {
+    const interfaceName = interfaceDecl.getName();
+    const methods = interfaceDecl.getMethods().map((m) => {
+      const name = m.getName();
+      const params = m.getParameters().map((p) => {
+        const paramName = p.getName();
+        const isOptional = p.isOptional();
+        const typeNode = p.getTypeNode();
+        const typeText = typeNode ? typeNode.getText() : p.getType().getText();
+        return { paramName, isOptional, typeText };
+      });
+      const returnType = m.getReturnType().getText() || "void";
+      return { name, params, returnType };
     });
-    const returnType = m.getReturnType().getText() || "void";
-    return { name, params, returnType };
+    interfaceMethodsMap.set(interfaceName, methods);
+    console.log(`  ✓ ${interfaceName}: ${methods.length} method(s)`);
   });
 
-  // Note: global.d.ts generation moved to build.ts for better workflow
-
-  // --- Generate Kotlin or Java ---
+  // Process each native module
   const androidPackage = config.androidPackageName;
-  const className = config.className;
   const androidLanguage = config.androidLanguage;
   const fileExtension = androidLanguage === "java" ? "java" : "kt";
   const androidSourceDir = androidLanguage === "java" ? "java" : "kotlin";
 
-  const androidFile = path.join(
-    `./android/src/main/${androidSourceDir}`,
-    ...androidPackage.split("."),
-    `${className}.${fileExtension}`,
-  );
-  fs.mkdirSync(path.dirname(androidFile), { recursive: true });
+  let generatedCount = 0;
 
-  if (androidLanguage === "kotlin") {
-    const ktMethods = methods
-      .map((m) => {
-        const params = m.params
-          .map((p) => {
-            const isCallback =
-              /=>|\(.*\)\s*=>/.test(p.typeText) ||
-              /callback/i.test(p.typeText) ||
-              p.paramName === "callback";
-            const kotlinType = isCallback
-              ? "Callback"
-              : convertType(p.typeText, "kotlin");
-            // ensure nullability marker is on the type
-            const finalType = kotlinType.endsWith("?")
-              ? kotlinType
-              : kotlinType + (p.isOptional ? "?" : "");
+  for (const moduleConfig of config.nativeModules) {
+    const { name: moduleName, className } = moduleConfig;
+    
+    // Find the corresponding interface by matching className or moduleName
+    let methods = interfaceMethodsMap.get(className);
+    if (!methods) {
+      // Try to find by module name if className doesn't match
+      methods = interfaceMethodsMap.get(moduleName);
+    }
+    if (!methods) {
+      // Try to find by adding "Module" suffix
+      methods = interfaceMethodsMap.get(moduleName + "Module");
+    }
+    
+    if (!methods) {
+      console.warn(`⚠️  No interface found for module ${className}, skipping...`);
+      continue;
+    }
+
+    console.log(`🔨 Generating code for ${className}...`);
+
+    // --- Generate Kotlin or Java ---
+    const androidFile = path.join(
+      `./android/src/main/${androidSourceDir}`,
+      ...androidPackage.split("."),
+      `${className}.${fileExtension}`,
+    );
+    fs.mkdirSync(path.dirname(androidFile), { recursive: true });
+
+    if (androidLanguage === "kotlin") {
+      const ktMethods = methods
+        .map((m) => {
+          const params = m.params
+            .map((p) => {
+              const isCallback =
+                /=>|\(.*\)\s*=>/.test(p.typeText) ||
+                /callback/i.test(p.typeText) ||
+                p.paramName === "callback";
+              const kotlinType = isCallback
+                ? "Callback"
+                : convertType(p.typeText, "kotlin");
+              // ensure nullability marker is on the type
+              const finalType = kotlinType.endsWith("?")
+                ? kotlinType
+                : kotlinType + (p.isOptional ? "?" : "");
+              return `${p.paramName}: ${finalType}`;
+            })
+            .join(", ");
+
+          const returnType = convertType(m.returnType, "kotlin");
+          return `  @LynxMethod\n  fun ${m.name}(${params})${
+            returnType !== "Unit" ? `: ${returnType}` : ""
+          } {\n    TODO()\n  }`;
+        })
+        .join("\n\n");
+
+      const ktContent = `\npackage ${androidPackage}\n\nimport android.content.Context\nimport com.lynx.jsbridge.LynxMethod\nimport com.lynx.jsbridge.LynxModule\nimport com.lynx.tasm.behavior.LynxContext\nimport com.lynx.react.bridge.Callback\nimport com.lynx.react.bridge.ReadableArray\nimport com.lynx.react.bridge.ReadableMap\n\nclass ${className}(context: Context) : LynxModule(context) {\n  private fun getContext(): Context {\n    val lynxContext = mContext as LynxContext\n    return lynxContext.getContext()\n  }\n\n${ktMethods}\n}\n`;
+      fs.writeFileSync(androidFile, ktContent.trim());
+    } else {
+      // Generate Java code
+      const javaMethods = methods
+        .map((m) => {
+          const params = m.params
+            .map((p) => {
+              const isCallback =
+                /=>|\(.*\)\s*=>/.test(p.typeText) ||
+                /callback/i.test(p.typeText) ||
+                p.paramName === "callback";
+              const javaType = isCallback
+                ? "Callback"
+                : convertType(p.typeText, "java");
+              return `${javaType} ${p.paramName}`;
+            })
+            .join(", ");
+
+          const returnType = convertType(m.returnType, "java");
+          return `  @LynxMethod\n  public ${returnType} ${m.name}(${params}) {\n    throw new UnsupportedOperationException("Not implemented");\n  }`;
+        })
+        .join("\n\n");
+
+      const javaContent = `\npackage ${androidPackage};\n\nimport android.content.Context;\nimport com.lynx.jsbridge.LynxMethod;\nimport com.lynx.jsbridge.LynxModule;\nimport com.lynx.tasm.behavior.LynxContext;\nimport com.lynx.react.bridge.Callback;\nimport com.lynx.react.bridge.ReadableArray;\nimport com.lynx.react.bridge.ReadableMap;\n\npublic class ${className} extends LynxModule {\n  public ${className}(Context context) {\n    super(context);\n  }\n\n  private Context getContext() {\n    LynxContext lynxContext = (LynxContext) mContext;\n    return lynxContext.getContext();\n  }\n\n${javaMethods}\n}\n`;
+      fs.writeFileSync(androidFile, javaContent.trim());
+    }
+
+    // --- Generate Swift ---
+    const swiftDir = path.join("./ios/modules");
+    fs.mkdirSync(swiftDir, { recursive: true });
+    const swiftFile = path.join(swiftDir, `${className}.swift`);
+
+    const methodLookupEntries = methods
+      .map((m: any) => {
+        const paramNames =
+          m.params && m.params.length > 0
+            ? m.params.map((p: any) => p.paramName).join(":")
+            : "";
+        const selectorParams = paramNames ? paramNames + ":" : paramNames;
+        return `        "${m.name}": NSStringFromSelector(#selector(${m.name}(${selectorParams})))`;
+      })
+      .join(",\n");
+
+    const swiftContent = `import Foundation\n\n@objcMembers\npublic final class ${className}: NSObject, LynxModule {\n\n    public static var name: String {\n        return "${className}"\n    }\n\n    public static var methodLookup: [String : String] {\n        return [\n${methodLookupEntries}\n        ]\n    }\n\n${methods
+      .map((m: any) => {
+        const swiftParams = m.params
+          .map((p: any) => {
+            const swiftType = convertType(p.typeText, "swift");
+            const finalType = swiftType.endsWith("?")
+              ? swiftType
+              : swiftType + (p.isOptional ? "?" : "");
             return `${p.paramName}: ${finalType}`;
           })
           .join(", ");
 
-        const returnType = convertType(m.returnType, "kotlin");
-        return `  @LynxMethod\n  fun ${m.name}(${params})${
-          returnType !== "Unit" ? `: ${returnType}` : ""
-        } {\n    TODO()\n  }`;
+        const returnType = convertType(m.returnType, "swift");
+        return `    func ${m.name}(${swiftParams})${
+          returnType !== "Void" ? ` -> ${returnType}` : ""
+        } {\n        fatalError("Not implemented")\n    }`;
       })
-      .join("\n\n");
+      .join("\n\n")}\n}\n`;
 
-    const ktContent = `\npackage ${androidPackage}\n\nimport android.content.Context\nimport com.lynx.jsbridge.LynxMethod\nimport com.lynx.jsbridge.LynxModule\nimport com.lynx.tasm.behavior.LynxContext\nimport com.lynx.react.bridge.Callback\nimport com.lynx.react.bridge.ReadableArray\nimport com.lynx.react.bridge.ReadableMap\n\nclass ${className}(context: Context) : LynxModule(context) {\n  private fun getContext(): Context {\n    val lynxContext = mContext as LynxContext\n    return lynxContext.getContext()\n  }\n\n${ktMethods}\n}\n`;
-    fs.writeFileSync(androidFile, ktContent.trim());
-  } else {
-    // Generate Java code
-    const javaMethods = methods
-      .map((m) => {
-        const params = m.params
-          .map((p) => {
-            const isCallback =
-              /=>|\(.*\)\s*=>/.test(p.typeText) ||
-              /callback/i.test(p.typeText) ||
-              p.paramName === "callback";
-            const javaType = isCallback
-              ? "Callback"
-              : convertType(p.typeText, "java");
-            return `${javaType} ${p.paramName}`;
-          })
-          .join(", ");
+    fs.writeFileSync(swiftFile, swiftContent.trim());
 
-        const returnType = convertType(m.returnType, "java");
-        return `  @LynxMethod\n  public ${returnType} ${m.name}(${params}) {\n    throw new UnsupportedOperationException("Not implemented");\n  }`;
-      })
-      .join("\n\n");
-
-    const javaContent = `\npackage ${androidPackage};\n\nimport android.content.Context;\nimport com.lynx.jsbridge.LynxMethod;\nimport com.lynx.jsbridge.LynxModule;\nimport com.lynx.tasm.behavior.LynxContext;\nimport com.lynx.react.bridge.Callback;\nimport com.lynx.react.bridge.ReadableArray;\nimport com.lynx.react.bridge.ReadableMap;\n\npublic class ${className} extends LynxModule {\n  public ${className}(Context context) {\n    super(context);\n  }\n\n  private Context getContext() {\n    LynxContext lynxContext = (LynxContext) mContext;\n    return lynxContext.getContext();\n  }\n\n${javaMethods}\n}\n`;
-    fs.writeFileSync(androidFile, javaContent.trim());
+    generatedCount++;
+    console.log(`  ✅ Generated ${className}.${fileExtension} and ${className}.swift`);
   }
 
-  // --- Generate Swift ---
-  const swiftDir = path.join("./ios/modules");
-  fs.mkdirSync(swiftDir, { recursive: true });
-  const swiftFile = path.join(swiftDir, `${className}.swift`);
-
-  const methodLookupEntries = methods
-    .map((m: any) => {
-      const paramNames =
-        m.params && m.params.length > 0
-          ? m.params.map((p: any) => p.paramName).join(":")
-          : "";
-      const selectorParams = paramNames ? paramNames + ":" : paramNames;
-      return `        "${m.name}": NSStringFromSelector(#selector(${m.name}(${selectorParams})))`;
-    })
-    .join(",\n");
-
-  const swiftContent = `import Foundation\n\n@objcMembers\npublic final class ${className}: NSObject, LynxModule {\n\n    public static var name: String {\n        return "${className}"\n    }\n\n    public static var methodLookup: [String : String] {\n        return [\n${methodLookupEntries}\n        ]\n    }\n\n${methods
-    .map((m: any) => {
-      const swiftParams = m.params
-        .map((p: any) => {
-          const swiftType = convertType(p.typeText, "swift");
-          const finalType = swiftType.endsWith("?")
-            ? swiftType
-            : swiftType + (p.isOptional ? "?" : "");
-          return `${p.paramName}: ${finalType}`;
-        })
-        .join(", ");
-
-      const returnType = convertType(m.returnType, "swift");
-      return `    func ${m.name}(${swiftParams})${
-        returnType !== "Void" ? ` -> ${returnType}` : ""
-      } {\n        fatalError("Not implemented")\n    }`;
-    })
-    .join("\n\n")}\n}\n`;
-
-  fs.writeFileSync(swiftFile, swiftContent.trim());
-
   const langLabel = androidLanguage === "java" ? "Java" : "Kotlin";
-  console.log(`✅ Codegen completed: d.ts, ${langLabel}, Swift generated!`);
+  console.log(`✅ Codegen completed: Generated ${generatedCount} module(s) in ${langLabel} and Swift`);
 }
 
 // If run directly from node

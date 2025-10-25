@@ -3,35 +3,7 @@
  * Defines the structure of tiger.config.ts/tiger.config.json configuration files
  */
 
-/**
- * Initialization hook configuration for advanced module setup
- */
-export interface InitializationHook {
-  /** Hook type: "static_method", "lifecycle_callbacks", "custom_initializer" */
-  type: string;
-  /** Method name for static_method hooks */
-  method?: string;
-  /** Class name for lifecycle_callbacks hooks */
-  className?: string;
-  /** Parameters to pass to the hook */
-  parameters?: string[];
-  /** Custom code for custom_initializer hooks */
-  code?: string;
-}
 
-/**
- * Initialization configuration for modules requiring advanced setup
- */
-export interface InitializationConfig {
-  /** Whether the module requires Android Application context */
-  requiresApplicationContext?: boolean;
-  /** List of initialization hooks to execute */
-  hooks?: InitializationHook[];
-  /** Module dependencies that must be initialized first */
-  dependencies?: string[];
-  /** Initialization order priority (lower numbers initialize first) */
-  order?: number;
-}
 
 /**
  * Native module configuration with structured metadata
@@ -55,8 +27,6 @@ export interface AndroidConfig {
   buildTypes?: string[];
   /** Programming language for Android platform: "kotlin" or "java" (default: "kotlin") */
   language?: string;
-  /** Advanced initialization configuration */
-  initialization?: InitializationConfig;
 }
 
 /**
@@ -69,8 +39,6 @@ export interface IOSConfig {
   sourceDir?: string;
   /** Required iOS frameworks */
   frameworks?: string[];
-  /** Advanced initialization configuration */
-  initialization?: InitializationConfig;
 }
 
 /**
@@ -79,8 +47,6 @@ export interface IOSConfig {
 export interface WebConfig {
   /** Entry point for web platform (default: web/src/index.ts) */
   entry?: string;
-  /** Advanced initialization configuration */
-  initialization?: InitializationConfig;
 }
 
 /**
@@ -103,7 +69,7 @@ export interface LynxExtConfig {
   /** Extension dependencies (other autolink packages) */
   dependencies?: string[];
   /** Native module class names exported by this extension (supports both string[] and NativeModuleConfig[]) */
-  nativeModules?: string[] | NativeModuleConfig[];
+  nativeModules?:  NativeModuleConfig[];
   /** Custom element names exported by this extension */
   elements?: string[];
   /** Service implementations exported by this extension */

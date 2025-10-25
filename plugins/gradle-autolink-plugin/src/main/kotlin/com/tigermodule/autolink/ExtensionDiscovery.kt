@@ -11,6 +11,7 @@ class ExtensionDiscovery(private val projectRoot: File) {
     
     private val gson = createAutolinkGson()
     private val validator = ConfigValidator()
+    private val classAnalyzer = ClassAnalyzer()
     
     /**
      * Discovers all TigerModule extensions in node_modules
@@ -35,13 +36,61 @@ class ExtensionDiscovery(private val projectRoot: File) {
                 println("   📦 ${ext.name}@${ext.version}")
             }
             
+            // Analyze modules for init methods
+            val enhancedExtensions = analyzeInitMethods(extensions)
+            
             // Validate all discovered extensions
-            validateExtensions(extensions)
+            validateExtensions(enhancedExtensions)
+            
+            return enhancedExtensions
         } else {
             println("ℹ️  No TigerModule extensions found in node_modules")
         }
         
         return extensions
+    }
+    
+    /**
+     * Analyzes extensions for init methods and enhances module configurations
+     */
+    private fun analyzeInitMethods(extensions: List<ExtensionPackage>): List<ExtensionPackage> {
+        println()
+        println("🔍 Analyzing modules for init methods...")
+        
+        return extensions.map { extension ->
+            val analysisResults = classAnalyzer.analyzeExtensionModules(extension)
+            
+            if (analysisResults.isNotEmpty()) {
+                // Update module configurations with init method information
+                val enhancedModules = extension.config.nativeModules.map { moduleConfig ->
+                    val analysisResult = analysisResults.find { it.moduleName == moduleConfig.name }
+                    
+                    if (analysisResult != null && analysisResult.initMethodInfo.hasInitMethod) {
+                        println("   ✅ ${extension.name}: ${moduleConfig.name} has init method")
+                        if (analysisResult.initMethodInfo.signature != null) {
+                            println("      Signature: ${analysisResult.initMethodInfo.signature}")
+                        }
+                        
+                        moduleConfig.copy(
+                            hasInitMethod = true,
+                            initMethodSignature = analysisResult.initMethodInfo.signature
+                        )
+                    } else {
+                        if (analysisResult?.initMethodInfo?.error != null) {
+                            println("   ⚠️  ${extension.name}: ${moduleConfig.name} - ${analysisResult.initMethodInfo.error}")
+                        }
+                        moduleConfig
+                    }
+                }
+                
+                // Create enhanced extension with updated module configurations
+                extension.copy(
+                    config = extension.config.copy(nativeModules = enhancedModules)
+                )
+            } else {
+                extension
+            }
+        }
     }
     
     /**

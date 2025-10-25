@@ -177,47 +177,6 @@ class RegistryGenerator {
             appendLine("     * @param context Android application context")
             appendLine("     */")
             appendLine("    fun setupGlobal(context: Context) {")
-            appendLine("        // Validate and cast context to Application if needed")
-            appendLine("        val applicationContext = when (context) {")
-            appendLine("            is android.app.Application -> context")
-            appendLine("            else -> {")
-            appendLine("                try {")
-            appendLine("                    context.applicationContext as? android.app.Application")
-            appendLine("                        ?: throw IllegalArgumentException(\"Context must be Application or provide Application context\")")
-            appendLine("                } catch (e: Exception) {")
-            appendLine("                    android.util.Log.e(\"ExtensionRegistry\", \"Failed to get Application context: \${e.message}\")")
-            appendLine("                    throw IllegalArgumentException(\"Invalid context provided. Extensions requiring Application context will not work properly.\", e)")
-            appendLine("                }")
-            appendLine("            }")
-            appendLine("        }")
-            appendLine()
-            
-            // Check if any extensions require initialization
-            val hasInitialization = extensions.any { ext ->
-                ext.config.platforms.android?.initialization != null
-            }
-            
-            if (hasInitialization) {
-                appendLine("        // Register lifecycle callbacks for extensions that require them")
-                extensions.forEach { ext ->
-                    val androidConfig = ext.config.platforms.android ?: return@forEach
-                    val initialization = androidConfig.initialization ?: return@forEach
-                    
-                    initialization.hooks.forEach { hook ->
-                        if (hook.type == "lifecycle_callbacks" && hook.className != null) {
-                            appendLine("        // Register lifecycle callbacks for ${ext.name}")
-                            appendLine("        try {")
-                            appendLine("            val ${hook.className.replaceFirstChar { it.lowercase() }}Instance = ${androidConfig.packageName}.${hook.className}()")
-                            appendLine("            applicationContext.registerActivityLifecycleCallbacks(${hook.className.replaceFirstChar { it.lowercase() }}Instance)")
-                            appendLine("            android.util.Log.d(\"ExtensionRegistry\", \"Registered lifecycle callbacks: ${hook.className}\")")
-                            appendLine("        } catch (e: Exception) {")
-                            appendLine("            android.util.Log.e(\"ExtensionRegistry\", \"Failed to register lifecycle callbacks ${hook.className}: \${e.message}\")")
-                            appendLine("        }")
-                        }
-                    }
-                }
-                appendLine()
-            }
             
             appendLine("        // Register native modules using LynxEnv.inst().registerModule()")
             

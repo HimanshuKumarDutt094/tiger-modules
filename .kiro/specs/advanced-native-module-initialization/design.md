@@ -2,16 +2,16 @@
 
 ## Overview
 
-This design extends the existing Lynx autolink system to support advanced native module initialization patterns. The solution introduces a flexible configuration system in `tiger.config.json` that allows modules to declare initialization requirements, and enhances the gradle plugin to generate appropriate registration code.
+This design extends the existing Lynx autolink system to support advanced native module initialization patterns through automatic detection of init methods in module classes. The solution eliminates the need for external configuration by allowing modules to handle their own initialization internally, following the pattern suggested by the Lynx maintainers.
 
-The design maintains full backward compatibility while adding powerful new capabilities for complex modules like the `LynxjsLinkingModule` that need Application context access and lifecycle callback registration.
+The design maintains full backward compatibility while providing a cleaner, more maintainable approach for complex modules like the `LynxjsLinkingModule` that need Application context access and lifecycle callback registration. Modules simply implement an `init(Context)` method and the autolink system automatically detects and calls it during registration.
 
 ## Architecture
 
 ### Configuration Layer
 
-- **Enhanced tiger.config.json**: Extended schema supporting initialization hooks, dependencies, and context requirements
-- **Validation Engine**: Build-time validation of initialization configurations
+- **Simplified tiger.config.json**: Minimal configuration with automatic init method detection
+- **Class Analysis Engine**: Build-time analysis of module classes to detect init methods
 - **Dependency Resolver**: Topological sorting of module initialization order
 
 ### Code Generation Layer
@@ -28,7 +28,7 @@ The design maintains full backward compatibility while adding powerful new capab
 
 ## Components and Interfaces
 
-### Enhanced tiger.config.json Schema
+### Simplified tiger.config.json Schema
 
 ```json
 {
@@ -37,22 +37,7 @@ The design maintains full backward compatibility while adding powerful new capab
   "platforms": {
     "android": {
       "packageName": "com.modules.linking",
-      "sourceDir": "android/src/main",
-      "initialization": {
-        "requiresApplicationContext": true,
-        "hooks": [
-          {
-            "type": "static_method",
-            "method": "initialize",
-            "parameters": ["context"]
-          },
-          {
-            "type": "lifecycle_callbacks",
-            "className": "LynxLinkingActivityListener"
-          }
-        ],
-        "dependencies": []
-      }
+      "sourceDir": "android/src/main"
     }
   },
   "nativeModules": [
@@ -64,12 +49,61 @@ The design maintains full backward compatibility while adding powerful new capab
 }
 ```
 
-### Initialization Hook Types
+### Module Class Pattern
 
-1. **static_method**: Calls a static method on the module class
-2. **lifecycle_callbacks**: Registers ActivityLifecycleCallbacks
-3. **custom_initializer**: Executes custom initialization code
-4. **dependency_injection**: Handles dependency injection patterns
+```kotlin
+@LynxNativeModule(name = "LynxjsLinking")
+class LynxjsLinkingModule(context: Context) : LynxModule(context) {
+    companion object {
+        var initialUrl: String? = null
+        private var installed = false
+        private var callbacks: Application.ActivityLifecycleCallbacks? = null
+    }
+
+    override fun init(ctx: Context) {
+        if (installed) return
+        
+        val app = (ctx.applicationContext as? Application)
+            ?: throw IllegalArgumentException("Context must be Application or provide applicationContext")
+        
+        if (callbacks == null) {
+            callbacks = object : Application.ActivityLifecycleCallbacks {
+                override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+                    onReceiveURL(activity.intent)
+                }
+                override fun onActivityResumed(activity: Activity) {
+                    onReceiveURL(activity.intent)
+                }
+                // ... other lifecycle methods
+            }
+        }
+        
+        app.unregisterActivityLifecycleCallbacks(callbacks!!)
+        app.registerActivityLifecycleCallbacks(callbacks!!)
+        installed = true
+    }
+    
+    private fun onReceiveURL(intent: Intent?) {
+        try {
+            val data: Uri? = intent?.data
+            if (data != null) {
+                initialUrl = data.toString()
+            }
+        } catch (e: Exception) {
+            // Handle error
+        }
+    }
+}
+```
+
+### Init Method Detection
+
+The system automatically detects modules that require advanced initialization by scanning for:
+
+1. **init(Context) method**: Instance method that takes Context parameter
+2. **init(Application) method**: Instance method that takes Application parameter  
+3. **Inheritance from base classes**: Modules extending classes with init methods
+4. **Method overrides**: Modules overriding init methods from parent classes
 
 ### Enhanced AutolinkConfig Data Classes
 
@@ -78,29 +112,28 @@ data class AndroidConfig(
     val packageName: String,
     val sourceDir: String = "android/src/main",
     val buildTypes: List<String> = listOf("debug", "release"),
-    val language: String = "kotlin",
-    val initialization: InitializationConfig? = null
+    val language: String = "kotlin"
 )
 
-data class InitializationConfig(
-    val requiresApplicationContext: Boolean = false,
-    val hooks: List<InitializationHook> = emptyList(),
-    val dependencies: List<String> = emptyList(),
-    val order: Int = 0
+data class NativeModuleInfo(
+    val name: String,
+    val className: String,
+    val hasInitMethod: Boolean = false,
+    val initMethodSignature: String? = null,
+    val dependencies: List<String> = emptyList()
 )
 
-data class InitializationHook(
-    val type: String, // "static_method", "lifecycle_callbacks", "custom_initializer"
-    val method: String? = null,
-    val className: String? = null,
-    val parameters: List<String> = emptyList(),
-    val code: String? = null
+data class ExtensionInfo(
+    val config: AutolinkConfig,
+    val nativeModules: List<NativeModuleInfo>,
+    val elements: List<ElementInfo> = emptyList(),
+    val services: List<ServiceInfo> = emptyList()
 )
 ```
 
 ### Enhanced Registry Generator
 
-The `RegistryGenerator` will be extended to produce more sophisticated initialization code:
+The `RegistryGenerator` will be extended to produce initialization code that calls init methods:
 
 ```kotlin
 fun setupGlobal(context: Context) {
@@ -126,13 +159,14 @@ private fun initializeModulesInOrder(application: Application) {
 
 private fun initializeLynxjsLinkingModule(application: Application) {
     try {
-        // Register lifecycle callbacks
-        val listener = LynxLinkingActivityListener()
-        application.registerActivityLifecycleCallbacks(listener)
-        Log.d("ExtensionRegistry", "LynxLinkingActivityListener registered")
-
+        // Create module instance
+        val module = LynxjsLinkingModule(application)
+        
+        // Call init method if it exists
+        module.init(application)
+        
         // Register the module
-        LynxEnv.inst().registerModule("LynxjsLinking", LynxjsLinkingModule::class.java)
+        LynxEnv.inst().registerModule("LynxjsLinking", module)
         Log.d("ExtensionRegistry", "Registered module: LynxjsLinking")
     } catch (e: Exception) {
         Log.e("ExtensionRegistry", "Failed to initialize LynxjsLinkingModule: ${e.message}")
@@ -250,7 +284,8 @@ The design maintains full backward compatibility:
 
 For the specific `LynxjsLinkingModule` case:
 
-1. Update `tiger.config.json` to declare lifecycle callback requirements
-2. Regenerate the extension registry using the enhanced gradle plugin
-3. The generated code will automatically handle ActivityLifecycleCallbacks registration
-4. No changes required to the module implementation itself
+1. Remove the separate `LynxjsLinkingActivityListener` class
+2. Add an `init(Context)` method to `LynxjsLinkingModule` that handles lifecycle callback registration internally
+3. Simplify `tiger.config.json` by removing initialization configuration
+4. Regenerate the extension registry using the enhanced gradle plugin
+5. The generated code will automatically detect and call the init method

@@ -1,115 +1,89 @@
 # Implementation Plan
 
-- [x] 1. Extend configuration data models for advanced initialization
-  - Update AutolinkConfig.kt to include InitializationConfig and InitializationHook data classes
-  - Add JSON parsing support for new initialization fields in tiger.config.json
-  - Implement backward compatibility handling for existing configurations
-  - _Requirements: 2.1, 2.2, 5.1_
+- [x] 0. Clean up existing complex initialization system (preparation for maintainer's approach)
+- [x] 0.1 Remove complex InitializationConfig and InitializationHook classes from AutolinkConfig.kt
 
-- [ ] 2. Enhance configuration validation system
-- [ ] 2.1 Add validation for initialization hook configurations
-  - Extend ConfigValidator.kt to validate initialization hook syntax and types
-  - Add validation for requiresApplicationContext flag and hook parameter combinations
-  - Implement validation for static method existence and parameter compatibility
+  - Remove InitializationConfig, InitializationHook data classes
+  - Remove initialization field from AndroidConfig, IOSConfig, WebConfig
+  - Keep only basic configuration structure
+  - _Requirements: 2.1, 2.2_
+
+- [x] 0.2 Simplify RegistryGenerator.kt to remove complex initialization logic
+
+  - Remove lifecycle callback registration code generation
+  - Remove initialization hook processing
+  - Keep only basic module registration (LynxEnv.inst().registerModule)
+  - _Requirements: 1.1, 1.3_
+
+- [x] 0.3 Update tiger.config.json parsing to remove initialization fields
+
+  - Remove initialization field parsing from JSON deserialization
+  - Ensure backward compatibility for configs without initialization
+  - Test that basic module registration still works
+  - _Requirements: 2.1, 5.1_
+
+- [x] 1. Implement maintainer's preferred init method approach
+- [x] 1.1 Create ClassAnalyzer for automatic init method detection
+
+  - Create ClassAnalyzer.kt to scan module classes for init(Context) methods
+  - Detect init method signatures automatically during extension discovery
+  - Mark modules with init methods for enhanced initialization
   - _Requirements: 5.1, 5.2, 5.5_
 
-- [ ] 2.2 Implement dependency validation and circular dependency detection
-  - Create dependency graph construction logic in ConfigValidator.kt
-  - Add topological sorting algorithm for dependency resolution
-  - Implement circular dependency detection with clear error reporting
-  - _Requirements: 3.1, 3.2, 5.4_
+- [x] 1.2 Update NativeModuleConfig to include init method information
 
-- [ ]\* 2.3 Write unit tests for configuration validation
-  - Create test cases for valid and invalid initialization configurations
-  - Test dependency resolution and circular dependency detection
-  - Verify error message quality and actionability
-  - _Requirements: 5.1, 5.2, 5.3_
+  - Add hasInitMethod flag to NativeModuleConfig data class
+  - Update JSON parsing to preserve init method detection results
+  - Ensure backward compatibility with existing configurations
+  - _Requirements: 2.1, 2.2_
 
-- [ ] 3. Enhance registry generator for advanced initialization patterns
-- [-] 3.1 Implement Application context handling in registry generation
-  - Update RegistryGenerator.kt to generate context validation and casting logic
-  - Add error handling for missing or invalid Application context
-  - Generate appropriate logging for context-related issues
-  - _Requirements: 1.2, 1.4, 4.2_
+- [ ] 2. Demonstrate init method pattern with LynxjsLinkingModule
+- [x] 2.1 Refactor LynxjsLinkingModule to use init method
 
-- [-] 3.2 Add lifecycle callback registration code generation
-  - Generate code for ActivityLifecycleCallbacks registration in setupGlobal method
-  - Implement error isolation for lifecycle callback registration failures
-  - Add logging for successful and failed callback registrations
-  - _Requirements: 1.1, 1.3, 1.5_
+  - Add init(Context) method to LynxjsLinkingModul.kt for lifecycle callback registration
+  - Move lifecycle callback logic from separate listener class into the module's init method
+  - Remove LynxjsLinkingActivityListener.kt class (no longer needed)
+  - _Requirements: 1.1, 1.2, 2.1_
 
-- [ ] 3.3 Implement static method initialization code generation
-  - Generate calls to static initialize methods when declared in configuration
-  - Handle parameter passing for Application context and other required parameters
-  - Add exception handling and error logging for static method calls
-  - _Requirements: 4.1, 4.2, 4.3, 4.4_
+- [ ] 2.2 Test the refactored module
 
-- [ ] 3.4 Create dependency-ordered initialization code generation
-  - Implement topological sorting in RegistryGenerator for module initialization order
-  - Generate separate initialization methods for each module with dependencies
-  - Add dependency validation at runtime with clear error reporting
-  - _Requirements: 3.1, 3.3, 3.4, 3.5_
-
-- [ ]\* 3.5 Write unit tests for registry generation
-  - Test Application context handling and validation
-  - Test lifecycle callback registration code generation
-  - Test static method initialization code generation
-  - Test dependency-ordered initialization
-  - _Requirements: 1.1, 1.2, 2.1, 3.1, 4.1_
-
-- [ ] 4. Update gradle plugin integration
-- [ ] 4.1 Enhance ExtensionDiscovery to parse new configuration fields
-  - Update parseExtension method to handle initialization configuration
-  - Add validation calls for new configuration fields during discovery
-  - Implement backward compatibility for existing tiger.config.json files
-  - _Requirements: 2.1, 2.2, 5.1_
-
-- [ ] 4.2 Update LynxExtensionBuildPlugin to use enhanced registry generation
-  - Modify generateLynxExtensionRegistry task to pass initialization configurations
-  - Update error handling to report initialization-specific validation errors
-  - Ensure generated code is properly integrated into Android source sets
-  - _Requirements: 1.1, 2.1, 3.1_
-
-- [ ]\* 4.3 Write integration tests for gradle plugin enhancements
-  - Test end-to-end module discovery with initialization configurations
-  - Test registry generation with various initialization patterns
-  - Test build integration and generated code compilation
-  - _Requirements: 1.1, 2.1, 3.1, 4.1_
-
-- [ ] 5. Create example configuration and update documentation
-- [ ] 5.1 Create example tiger.config.json with advanced initialization
-  - Update e2e-test/lynxjs-linking-module/tiger.config.json with lifecycle callback configuration
-  - Add comprehensive examples for different initialization hook types
-  - Include dependency declaration examples
-  - _Requirements: 1.1, 2.1, 3.1, 4.1_
-
-- [ ] 5.2 Update module implementation to work with new system
-  - Ensure LynxjsLinkingModule.kt is compatible with generated initialization code
-  - Verify LynxLinkingActivityListener.kt works with automatic registration
-  - Test that existing module functionality remains unchanged
+  - Verify that lifecycle callbacks work correctly with the new init method approach
+  - Test that deep linking functionality remains unchanged
+  - Ensure no regression in existing module functionality
   - _Requirements: 1.1, 1.2, 1.3_
 
-- [ ]\* 5.3 Write end-to-end integration tests
-  - Test complete workflow from tiger.config.json to working Android application
-  - Verify ActivityLifecycleCallbacks are properly registered and functional
-  - Test error handling and recovery scenarios
-  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
+- [ ] 3. Update registry generation for init method support
+- [ ] 3.1 Enhance RegistryGenerator to call init methods
 
-- [ ] 6. Implement backward compatibility and migration support
-- [ ] 6.1 Ensure existing modules continue to work without changes
-  - Test that modules without initialization configuration use legacy registration
-  - Verify no breaking changes to existing AutolinkConfig parsing
-  - Maintain compatibility with existing generated registry code
-  - _Requirements: 2.2, 4.4_
+  - Modify RegistryGenerator.kt to generate init method calls for modules that have them
+  - Add Application context handling and validation
+  - Generate error handling and logging for init method calls
+  - _Requirements: 1.1, 1.3, 4.1_
 
-- [ ] 6.2 Create migration utilities and documentation
-  - Document how to migrate existing complex modules to use new initialization system
-  - Provide examples of common migration patterns
-  - Create validation warnings for modules that could benefit from new system
-  - _Requirements: 2.1, 5.1, 5.2_
+- [ ] 3.2 Update ExtensionDiscovery to use ClassAnalyzer
 
-- [ ]\* 6.3 Write backward compatibility tests
-  - Test that existing tiger.config.json files work unchanged
-  - Test that mixed old/new configuration scenarios work correctly
-  - Verify no regression in existing functionality
-  - _Requirements: 2.2, 4.4_
+  - Integrate ClassAnalyzer into ExtensionDiscovery during module scanning
+  - Update parseExtension method to analyze module classes for init methods
+  - Mark modules with init methods in the discovery results
+  - _Requirements: 2.1, 2.2, 5.1_
+
+- [ ]\* 3.3 Write unit tests for init method support
+
+  - Test ClassAnalyzer init method detection
+  - Test registry generation with init method calls
+  - Test integration between ExtensionDiscovery and ClassAnalyzer
+  - _Requirements: 1.1, 2.1, 5.1_
+
+- [ ] 4. End-to-end testing and validation
+- [ ] 4.1 Test complete workflow with LynxjsLinkingModule
+
+  - Build and test the refactored linking module in the test app
+  - Verify that deep linking works correctly with the new approach
+  - Test that the generated registry calls the init method properly
+  - _Requirements: 1.1, 1.2, 1.3_
+
+- [ ]\* 4.2 Create documentation and examples
+  - Document the new init method pattern for module developers
+  - Provide before/after examples showing the migration from separate listeners
+  - Create guidelines for when to use init methods vs simple modules
+  - _Requirements: 2.1, 5.1_

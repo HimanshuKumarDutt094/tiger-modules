@@ -4,33 +4,16 @@ import com.google.gson.*
 import com.google.gson.reflect.TypeToken
 import java.lang.reflect.Type
 
-/**
- * Initialization hook configuration for advanced module setup
- */
-data class InitializationHook(
-    val type: String, // "static_method", "lifecycle_callbacks", "custom_initializer"
-    val method: String? = null,
-    val className: String? = null,
-    val parameters: List<String> = emptyList(),
-    val code: String? = null
-)
 
-/**
- * Initialization configuration for modules requiring advanced setup
- */
-data class InitializationConfig(
-    val requiresApplicationContext: Boolean = false,
-    val hooks: List<InitializationHook> = emptyList(),
-    val dependencies: List<String> = emptyList(),
-    val order: Int = 0
-)
 
 /**
  * Native module configuration with structured metadata
  */
 data class NativeModuleConfig(
     val name: String,
-    val className: String
+    val className: String,
+    val hasInitMethod: Boolean = false,
+    val initMethodSignature: String? = null
 )
 
 /**
@@ -57,20 +40,17 @@ data class AndroidConfig(
     val packageName: String,
     val sourceDir: String = "android/src/main",
     val buildTypes: List<String> = listOf("debug", "release"),
-    val language: String = "kotlin",
-    val initialization: InitializationConfig? = null
+    val language: String = "kotlin"
 )
 
 data class IOSConfig(
     val podspecPath: String? = null,
     val sourceDir: String = "ios/src",
-    val frameworks: List<String> = emptyList(),
-    val initialization: InitializationConfig? = null
+    val frameworks: List<String> = emptyList()
 )
 
 data class WebConfig(
-    val entry: String = "web/src/index.ts",
-    val initialization: InitializationConfig? = null
+    val entry: String = "web/src/index.ts"
 )
 
 /**
@@ -116,7 +96,9 @@ class NativeModulesDeserializer : JsonDeserializer<List<NativeModuleConfig>> {
                 val moduleName = element.asString
                 NativeModuleConfig(
                     name = moduleName,
-                    className = moduleName
+                    className = moduleName,
+                    hasInitMethod = false,
+                    initMethodSignature = null
                 )
             }
         } else if (firstElement.isJsonObject) {
@@ -125,7 +107,9 @@ class NativeModulesDeserializer : JsonDeserializer<List<NativeModuleConfig>> {
                 val obj = element.asJsonObject
                 NativeModuleConfig(
                     name = obj.get("name")?.asString ?: "",
-                    className = obj.get("className")?.asString ?: ""
+                    className = obj.get("className")?.asString ?: "",
+                    hasInitMethod = obj.get("hasInitMethod")?.asBoolean ?: false,
+                    initMethodSignature = obj.get("initMethodSignature")?.asString
                 )
             }
         } else {
