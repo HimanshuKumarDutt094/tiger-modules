@@ -32,8 +32,8 @@
     "typescript": "~5.9.2",
     "typescript-eslint": "^8.38.0",
     "vitest": "^3.2.4",
-    "lynxjs-linking-module": "link:lynxjs-linking-module/dist",
-    "local-storage-module": "link:local-storage-module/dist"
+    "local-storage-module": "link:local-storage-module/dist",
+"rfc-test":"link:rfc-test/dist"
   },
   "engines": {
     "node": ">=18"

@@ -61,6 +61,64 @@ function runTsdown(cwd: string) {
   console.log("tsdown compilation completed successfully");
 }
 
+async function copyGeneratedFolder(moduleDir: string, distDir: string) {
+  const generatedSrc = path.join(moduleDir, "generated");
+  
+  if (fs.existsSync(generatedSrc)) {
+    try {
+      const generatedDest = path.join(distDir, "generated");
+      await copyDir(generatedSrc, generatedDest);
+      console.log("✓ copied generated/ -> dist/generated/");
+      
+      // List copied files for transparency
+      const files = await fs.promises.readdir(generatedSrc);
+      for (const file of files) {
+        console.log(`  • ${file}`);
+      }
+    } catch (err) {
+      console.warn(
+        "⚠️  generated folder copy failed:",
+        err instanceof Error ? err.message : err,
+      );
+    }
+  } else {
+    console.log("ℹ️  No generated/ folder found (run 'tiger-module codegen' to create)");
+  }
+}
+
+async function validateExports(moduleDir: string) {
+  const indexPath = path.join(moduleDir, "src", "index.ts");
+  
+  if (!fs.existsSync(indexPath)) {
+    console.log("ℹ️  No src/index.ts found, skipping export validation");
+    return;
+  }
+  
+  try {
+    const indexContent = await fs.promises.readFile(indexPath, "utf8");
+    const generatedDir = path.join(moduleDir, "generated");
+    
+    // Check for references to generated files
+    if (indexContent.includes("../generated/") || indexContent.includes("./generated/")) {
+      if (!fs.existsSync(generatedDir)) {
+        console.log("⚠️  src/index.ts references generated files, but generated/ folder not found");
+        console.log("   Run 'tiger-module codegen' to generate platform bindings");
+      } else {
+        console.log("✓ Export validation passed - generated files referenced and available");
+      }
+    }
+    
+    // Basic export pattern validation
+    const hasExports = indexContent.includes("export") || indexContent.includes("export default");
+    if (!hasExports) {
+      console.log("⚠️  No exports found in src/index.ts - consumers won't be able to import anything");
+    }
+    
+  } catch (err) {
+    console.warn("⚠️  Export validation failed:", err instanceof Error ? err.message : err);
+  }
+}
+
 async function copyAutolinkConfig(moduleDir: string, distDir: string) {
   try {
     const { configFile, configPath } = await loadConfig(moduleDir);
@@ -85,6 +143,99 @@ async function copyAutolinkConfig(moduleDir: string, distDir: string) {
   }
 }
 
+interface BuildSummary {
+  platformFolders: {
+    android: boolean;
+    ios: boolean;
+    web: boolean;
+  };
+  generatedFiles: string[];
+  totalFiles: number;
+  packageSize: string;
+}
+
+async function getBuildSummary(moduleDir: string, distDir: string): Promise<BuildSummary> {
+  const summary: BuildSummary = {
+    platformFolders: {
+      android: fs.existsSync(path.join(distDir, "android")),
+      ios: fs.existsSync(path.join(distDir, "ios")),
+      web: fs.existsSync(path.join(distDir, "web")),
+    },
+    generatedFiles: [],
+    totalFiles: 0,
+    packageSize: "0 B",
+  };
+
+  // Count generated files
+  const generatedDir = path.join(distDir, "generated");
+  if (fs.existsSync(generatedDir)) {
+    try {
+      summary.generatedFiles = await fs.promises.readdir(generatedDir);
+    } catch (err) {
+      // Ignore errors
+    }
+  }
+
+  // Count total files and calculate size
+  try {
+    const countFiles = async (dir: string): Promise<{ count: number; size: number }> => {
+      let count = 0;
+      let size = 0;
+      
+      const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          const subResult = await countFiles(fullPath);
+          count += subResult.count;
+          size += subResult.size;
+        } else if (entry.isFile()) {
+          count++;
+          const stat = await fs.promises.stat(fullPath);
+          size += stat.size;
+        }
+      }
+      
+      return { count, size };
+    };
+
+    const result = await countFiles(distDir);
+    summary.totalFiles = result.count;
+    
+    // Format size
+    const formatSize = (bytes: number): string => {
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    };
+    
+    summary.packageSize = formatSize(result.size);
+  } catch (err) {
+    // Ignore errors in size calculation
+  }
+
+  return summary;
+}
+
+function provideBuildSummary(summary: BuildSummary) {
+  console.log();
+  console.log("📊 Build Summary:");
+  console.log(`   Total files: ${summary.totalFiles}`);
+  console.log(`   Package size: ${summary.packageSize}`);
+  
+  const platforms = Object.entries(summary.platformFolders)
+    .filter(([_, exists]) => exists)
+    .map(([platform, _]) => platform);
+  
+  if (platforms.length > 0) {
+    console.log(`   Platforms: ${platforms.join(", ")}`);
+  }
+  
+  if (summary.generatedFiles.length > 0) {
+    console.log(`   Generated files: ${summary.generatedFiles.length} (${summary.generatedFiles.join(", ")})`);
+  }
+}
+
 async function writeDistPackageJson(moduleDir: string, distDir: string) {
   const pkgPath = path.join(moduleDir, "package.json");
   const pkg = JSON.parse(await fs.promises.readFile(pkgPath, "utf8"));
@@ -98,6 +249,11 @@ async function writeDistPackageJson(moduleDir: string, distDir: string) {
     "*.d.ts",
     "tiger.config.json", // Always include JSON in dist for runtime
   ];
+
+  // Add generated folder to files array if it exists
+  if (fs.existsSync(path.join(distDir, "generated"))) {
+    baseFiles.push("generated");
+  }
 
   pkg.files = Array.from(new Set([...(pkg.files || []), ...baseFiles]));
 
@@ -121,6 +277,25 @@ async function writeDistPackageJson(moduleDir: string, distDir: string) {
     types: "./global.d.ts",
   };
 
+  // Add generated file exports
+  const generatedDir = path.join(distDir, "generated");
+  if (fs.existsSync(generatedDir)) {
+    try {
+      const generatedFiles = await fs.promises.readdir(generatedDir);
+      
+      // Add pattern export for all generated files
+      pkg.exports["./generated/*"] = "./generated/*";
+      
+      // Add specific exports for each generated file
+      for (const file of generatedFiles) {
+        const name = path.parse(file).name;
+        pkg.exports[`./generated/${name}`] = `./generated/${file}`;
+      }
+    } catch (err) {
+      console.warn("⚠️  Failed to read generated directory for exports:", err instanceof Error ? err.message : err);
+    }
+  }
+
   // Keep package.json export
   pkg.exports["./package.json"] = "./package.json";
 
@@ -135,6 +310,18 @@ async function writeDistPackageJson(moduleDir: string, distDir: string) {
   console.log("  main:", pkg.main);
   console.log("  types:", pkg.types);
   console.log("  files:", pkg.files.join(", "));
+  
+  // Show generated exports if any
+  if (fs.existsSync(generatedDir)) {
+    try {
+      const generatedFiles = await fs.promises.readdir(generatedDir);
+      if (generatedFiles.length > 0) {
+        console.log("  generated exports:", generatedFiles.map(f => `./generated/${path.parse(f).name}`).join(", "));
+      }
+    } catch (err) {
+      // Ignore read errors for logging
+    }
+  }
 }
 
 export default async function buildModule() {
@@ -218,11 +405,21 @@ export default async function buildModule() {
     }
   }
 
-  // 7. Copy/compile config to dist/tiger.config.json (required for autolink)
+  // 7. Copy generated directory to dist (if exists)
+  await copyGeneratedFolder(moduleDir, distDir);
+
+  // 8. Validate exports and provide guidance
+  await validateExports(moduleDir);
+
+  // 9. Copy/compile config to dist/tiger.config.json (required for autolink)
   await copyAutolinkConfig(moduleDir, distDir);
 
-  // 8. Write dist/package.json with proper exports
+  // 10. Write dist/package.json with proper exports
   await writeDistPackageJson(moduleDir, distDir);
+
+  // 11. Provide comprehensive build summary
+  const summary = await getBuildSummary(moduleDir, distDir);
+  provideBuildSummary(summary);
 
   console.log();
   console.log("✅ Build complete!");

@@ -3,8 +3,6 @@
  * Defines the structure of tiger.config.ts/tiger.config.json configuration files
  */
 
-
-
 /**
  * Native module configuration with structured metadata
  */
@@ -13,6 +11,26 @@ export interface NativeModuleConfig {
   name: string;
   /** Class name of the module implementation (e.g., "LocalStorageModule") */
   className: string;
+}
+
+/**
+ * Custom Android view configuration for elements
+ */
+export interface CustomViewConfig {
+  /** Name of the Android view type (must match a key from ANDROID_VIEW_TYPES registry or be a full class name) */
+  name: string;
+  /** Full package name (optional, will be derived from name if it's a full class name) */
+  package?: string;
+}
+
+/**
+ * Element configuration with optional custom Android view
+ */
+export interface ElementConfig {
+  /** Element name */
+  name: string;
+  /** Optional custom Android view configuration */
+  customView?: CustomViewConfig;
 }
 
 /**
@@ -69,9 +87,9 @@ export interface LynxExtConfig {
   /** Extension dependencies (other autolink packages) */
   dependencies?: string[];
   /** Native module class names exported by this extension (supports both string[] and NativeModuleConfig[]) */
-  nativeModules?:  NativeModuleConfig[];
-  /** Custom element names exported by this extension */
-  elements?: string[];
+  nativeModules?: NativeModuleConfig[];
+  /** Custom element configurations exported by this extension */
+  elements?: ElementConfig[];
   /** Service implementations exported by this extension */
   services?: string[];
 }
@@ -98,7 +116,7 @@ export class ConfigValidationError extends Error {
     public type: ConfigErrorType,
     public field?: string,
     message?: string,
-    public suggestion?: string,
+    public suggestion?: string
   ) {
     super(message || `Configuration validation failed: ${type}`);
     this.name = "ConfigValidationError";
@@ -139,6 +157,21 @@ export type AutolinkConfig = LynxExtConfig;
  *   },
  *   nativeModules: [
  *     { name: 'MyModule', className: 'MyModuleImpl' }
+ *   ],
+ *   elements: [
+ *     { name: 'BasicElement' },  // Uses default View
+ *     {
+ *       name: 'ExplorerInput',
+ *       customView: {
+ *         name: 'AppCompatEditText'  // Short name from built-in registry
+ *       }
+ *     },
+ *     {
+ *       name: 'CustomButton',
+ *       customView: {
+ *         name: 'com.mycompany.CustomButton'  // Custom full class name
+ *       }
+ *     }
  *   ]
  * });
  * ```

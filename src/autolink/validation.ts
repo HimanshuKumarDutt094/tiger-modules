@@ -120,7 +120,21 @@ export function validateAutolinkConfig(config: unknown): ValidationResult {
     }
   }
 
-  validateOptionalArrayField(cfg, "elements", "string", errors, warnings);
+  // Validate elements - supports both string[] and ElementConfig[]
+  if (cfg.elements !== undefined) {
+    if (!Array.isArray(cfg.elements)) {
+      errors.push(
+        new ConfigValidationError(
+          ConfigErrorType.INVALID_FIELD_TYPE,
+          "elements",
+          "elements must be an array",
+        ),
+      );
+    } else {
+      const elementErrors = validateElements(cfg.elements);
+      errors.push(...elementErrors);
+    }
+  }
   validateOptionalArrayField(cfg, "services", "string", errors, warnings);
 
   return {
@@ -530,4 +544,107 @@ function validateNativeModules(modules: unknown[]): ConfigValidationError[] {
   }
 
   return errors;
+}
+
+/**
+ * Validates elements array (supports both old string[] and new ElementConfig[] formats)
+ */
+function validateElements(elements: unknown[]): ConfigValidationError[] {
+  const errors: ConfigValidationError[] = [];
+
+  for (let i = 0; i < elements.length; i++) {
+    const element = elements[i];
+
+    if (typeof element === "string") {
+      // Old format: validate as element name
+      if (!isValidElementName(element)) {
+        errors.push(
+          new ConfigValidationError(
+            ConfigErrorType.INVALID_FIELD_VALUE,
+            `elements[${i}]`,
+            `Invalid element name: ${element}`,
+            "Element names must start with uppercase letter and contain only letters and digits",
+          ),
+        );
+      }
+    } else if (typeof element === "object" && element !== null) {
+      // New format: validate ElementConfig structure
+      const elementConfig = element as Record<string, unknown>;
+
+      if (!elementConfig.name || typeof elementConfig.name !== "string") {
+        errors.push(
+          new ConfigValidationError(
+            ConfigErrorType.MISSING_REQUIRED_FIELD,
+            `elements[${i}].name`,
+            "Element name is required",
+            "Add 'name' field to element configuration",
+          ),
+        );
+      } else if (!isValidElementName(elementConfig.name as string)) {
+        errors.push(
+          new ConfigValidationError(
+            ConfigErrorType.INVALID_FIELD_VALUE,
+            `elements[${i}].name`,
+            `Invalid element name: ${elementConfig.name}`,
+            "Element names must start with uppercase letter and contain only letters and digits",
+          ),
+        );
+      }
+
+      // Validate customView if present
+      if (elementConfig.customView !== undefined) {
+        if (typeof elementConfig.customView !== "object" || elementConfig.customView === null) {
+          errors.push(
+            new ConfigValidationError(
+              ConfigErrorType.INVALID_FIELD_TYPE,
+              `elements[${i}].customView`,
+              "customView must be an object",
+            ),
+          );
+        } else {
+          const customView = elementConfig.customView as Record<string, unknown>;
+          
+          if (!customView.name || typeof customView.name !== "string") {
+            errors.push(
+              new ConfigValidationError(
+                ConfigErrorType.MISSING_REQUIRED_FIELD,
+                `elements[${i}].customView.name`,
+                "customView name is required",
+                "Add 'name' field to customView configuration",
+              ),
+            );
+          }
+
+          if (customView.package !== undefined && typeof customView.package !== "string") {
+            errors.push(
+              new ConfigValidationError(
+                ConfigErrorType.INVALID_FIELD_TYPE,
+                `elements[${i}].customView.package`,
+                "customView package must be a string",
+              ),
+            );
+          }
+        }
+      }
+    } else {
+      errors.push(
+        new ConfigValidationError(
+          ConfigErrorType.INVALID_FIELD_TYPE,
+          `elements[${i}]`,
+          "Element must be either a string or an object",
+        ),
+      );
+    }
+  }
+
+  return errors;
+}
+
+/**
+ * Validates element name format
+ */
+function isValidElementName(name: string): boolean {
+  // Element names should start with uppercase letter and contain only letters and digits
+  const pattern = /^[A-Z][a-zA-Z0-9]*$/;
+  return pattern.test(name);
 }

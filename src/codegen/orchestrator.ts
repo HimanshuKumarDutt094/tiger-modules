@@ -1,0 +1,141 @@
+/**
+ * Code generation orchestrator
+ * Coordinates the entire code generation process
+ */
+
+import { parseInterfaces, parseElementInterfaces } from "./parser.js";
+import { loadCodegenConfig, validateConfig } from "./config.js";
+import { generateNativeModule } from "./modules.js";
+import { generateElement } from "./elements.js";
+import { generateService } from "./services.js";
+import type { CodegenContext, MethodInfo, PropertyInfo } from "./types.js";
+
+export async function runCodegenOrchestrator(): Promise<void> {
+  // Load and validate configuration
+  const config = await loadCodegenConfig();
+  validateConfig(config);
+
+  // Parse TypeScript interfaces
+  const interfaceMethodsMap = parseInterfaces(
+    config.srcFile,
+    config.nativeModules.map((m) => m.className),
+    config.elements.map((el) => (typeof el === "string" ? el : el.name)),
+    config.services
+  );
+
+  // Parse element interfaces with JSDoc support
+  const elementInfoMap = parseElementInterfaces(
+    config.srcFile,
+    config.elements
+  );
+
+  // Create codegen context
+  const codegenContext: CodegenContext = {
+    androidPackageName: config.androidPackageName,
+    androidLanguage: config.androidLanguage,
+    fileExtension: config.androidLanguage === "java" ? "java" : "kt",
+    androidSourceDir: config.androidLanguage === "java" ? "java" : "kotlin",
+  };
+
+  let generatedCount = 0;
+
+  // Process Native Modules
+  for (const moduleConfig of config.nativeModules) {
+    const { name: moduleName, className } = moduleConfig;
+
+    // Find the corresponding interface by matching className or moduleName
+    let methodsOrProps = interfaceMethodsMap.get(className);
+    if (!methodsOrProps) {
+      methodsOrProps = interfaceMethodsMap.get(moduleName);
+    }
+    if (!methodsOrProps) {
+      methodsOrProps = interfaceMethodsMap.get(moduleName + "Module");
+    }
+
+    // Ensure we have methods (not properties) for native modules
+    if (
+      !methodsOrProps ||
+      !Array.isArray(methodsOrProps) ||
+      methodsOrProps.length === 0
+    ) {
+      console.warn(
+        `⚠️  No interface found for module ${className}, skipping...`
+      );
+      continue;
+    }
+
+    // Type guard to ensure we have MethodInfo[]
+    const methods = methodsOrProps as MethodInfo[];
+    if (!methods[0] || !("params" in methods[0])) {
+      console.warn(
+        `⚠️  Interface for ${className} is not a module interface (missing methods), skipping...`
+      );
+      continue;
+    }
+
+    // Use the modular generator
+    generateNativeModule(moduleConfig, methods, codegenContext);
+    generatedCount++;
+  }
+
+  // Process Elements (RFC requirement)
+  for (const elementConfig of config.elements) {
+    // Handle both old string format and new ElementConfig format
+    const elementName =
+      typeof elementConfig === "string" ? elementConfig : elementConfig.name;
+
+    // Try to get ElementInfo from the new parser first
+    const elementInfo = elementInfoMap.get(elementName);
+
+    if (elementInfo) {
+      // Use the new ElementInfo-based generator
+      generateElement(elementInfo, codegenContext);
+    } else {
+      // Fallback to old method for backward compatibility
+      const propsInterfaceName = `${elementName}Props`;
+      const propsOrMethods = interfaceMethodsMap.get(propsInterfaceName);
+
+      if (!propsOrMethods) {
+        console.warn(
+          `⚠️  No props interface found for element ${elementName}, creating basic template...`
+        );
+      }
+
+      // Type guard to ensure we have PropertyInfo[]
+      const properties = propsOrMethods as PropertyInfo[] | undefined;
+
+      // Use the old generator signature
+      generateElement(elementName, properties, codegenContext);
+    }
+    generatedCount++;
+  }
+
+  // Process Services (RFC requirement)
+  for (const serviceName of config.services) {
+    // Find service interface
+    const serviceMethodsOrProps = interfaceMethodsMap.get(serviceName);
+
+    if (!serviceMethodsOrProps) {
+      console.warn(
+        `⚠️  No interface found for service ${serviceName}, creating basic template...`
+      );
+    }
+
+    // Type guard to ensure we have MethodInfo[]
+    const methods = serviceMethodsOrProps as MethodInfo[] | undefined;
+
+    // Use the modular generator
+    generateService(serviceName, methods, codegenContext);
+    generatedCount++;
+  }
+
+  console.log(
+    `✅ Codegen completed: Generated ${generatedCount} extension(s) following RFC architecture`
+  );
+  console.log(`📁 Generated base classes in generated/ folders`);
+  console.log(`📁 Created implementation templates (extend base classes)`);
+  console.log(`📁 Generated root TypeScript bindings in generated/`);
+  console.log(
+    `\n🔄 Next: Implement your logic in the generated template files!`
+  );
+}

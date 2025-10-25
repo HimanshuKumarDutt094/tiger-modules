@@ -20,6 +20,9 @@ dependencies {
     // For JSON parsing
     implementation("com.google.code.gson:gson:2.10.1")
     
+    // For bytecode analysis (annotation scanning)
+    implementation("org.ow2.asm:asm:9.6")
+    
     // Testing
     testImplementation("junit:junit:4.13.2")
     testImplementation(gradleTestKit())

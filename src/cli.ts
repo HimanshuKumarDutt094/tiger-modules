@@ -12,9 +12,9 @@ program
   .version("0.1.0")
   .helpOption("-h, --help", "display help for command");
 
-// init command: accepts optional project name and module name
+// init command: accepts optional project name
 program
-  .command("init [projectName] [moduleName]")
+  .command("init [projectName]")
   .description("Scaffold a new LynxJS autolink extension")
   .option(
     "--language <language>",
@@ -24,10 +24,9 @@ program
   .action(
     async (
       projectName?: string,
-      moduleName?: string,
       options?: { language?: string },
     ) => {
-      await initModule(projectName, moduleName, options?.language);
+      await initModule(projectName, options?.language);
     },
   );
 

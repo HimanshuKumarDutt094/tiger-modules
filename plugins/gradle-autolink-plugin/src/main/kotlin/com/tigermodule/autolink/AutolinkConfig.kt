@@ -17,6 +17,21 @@ data class NativeModuleConfig(
 )
 
 /**
+ * Element configuration with optional custom view type
+ */
+data class ElementConfig(
+    val name: String,
+    val customView: CustomViewConfig? = null
+)
+
+/**
+ * Custom view configuration for elements
+ */
+data class CustomViewConfig(
+    val name: String
+)
+
+/**
  * Data classes representing tiger.config.json configuration structure
  */
 data class AutolinkConfig(
@@ -26,7 +41,7 @@ data class AutolinkConfig(
     val platforms: Platforms,
     val dependencies: List<String> = emptyList(),
     val nativeModules: List<NativeModuleConfig> = emptyList(),
-    val elements: List<String> = emptyList(),
+    val elements: List<ElementConfig> = emptyList(),
     val services: List<String> = emptyList()
 )
 
@@ -63,69 +78,11 @@ data class ExtensionPackage(
     val config: AutolinkConfig
 )
 
-/**
- * Custom deserializer for NativeModules that handles both old and new formats
- * Old format: ["Module1", "Module2"]
- * New format: [{"name": "Module1", "className": "Module1Impl"}]
- */
-class NativeModulesDeserializer : JsonDeserializer<List<NativeModuleConfig>> {
-    override fun deserialize(
-        json: JsonElement?,
-        typeOfT: Type?,
-        context: JsonDeserializationContext?
-    ): List<NativeModuleConfig> {
-        if (json == null || json.isJsonNull) {
-            return emptyList()
-        }
 
-        if (!json.isJsonArray) {
-            return emptyList()
-        }
-
-        val array = json.asJsonArray
-        if (array.size() == 0) {
-            return emptyList()
-        }
-
-        // Check first element to determine format
-        val firstElement = array.get(0)
-        
-        return if (firstElement.isJsonPrimitive && firstElement.asJsonPrimitive.isString) {
-            // Old format: string array
-            array.map { element ->
-                val moduleName = element.asString
-                NativeModuleConfig(
-                    name = moduleName,
-                    className = moduleName,
-                    hasInitMethod = false,
-                    initMethodSignature = null
-                )
-            }
-        } else if (firstElement.isJsonObject) {
-            // New format: object array
-            array.map { element ->
-                val obj = element.asJsonObject
-                NativeModuleConfig(
-                    name = obj.get("name")?.asString ?: "",
-                    className = obj.get("className")?.asString ?: "",
-                    hasInitMethod = obj.get("hasInitMethod")?.asBoolean ?: false,
-                    initMethodSignature = obj.get("initMethodSignature")?.asString
-                )
-            }
-        } else {
-            emptyList()
-        }
-    }
-}
 
 /**
- * Creates a Gson instance configured with custom deserializers for AutolinkConfig
+ * Creates a Gson instance for AutolinkConfig
  */
 fun createAutolinkGson(): Gson {
-    return GsonBuilder()
-        .registerTypeAdapter(
-            object : TypeToken<List<NativeModuleConfig>>() {}.type,
-            NativeModulesDeserializer()
-        )
-        .create()
+    return GsonBuilder().create()
 }

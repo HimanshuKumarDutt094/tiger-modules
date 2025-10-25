@@ -1,0 +1,37 @@
+{
+  "name": "rfc-test",
+  "version": "0.1.0",
+  "description": "My Lynx native module",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/global.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tiger-module build",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "release": "bumpp && npm publish",
+    "codegen": "tiger-module codegen"
+  },
+  "devDependencies": {
+    "@types/node": "^24.8.1",
+    "tiger-module": "link:tiger-module",
+    "tsdown": "^0.15.8",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@lynx-js/types": "^3.4.11"
+  }
+}

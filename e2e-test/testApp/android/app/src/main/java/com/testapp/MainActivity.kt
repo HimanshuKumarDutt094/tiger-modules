@@ -14,7 +14,8 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Register all discovered Lynx extensions
+        // Register all discovered Lynx extensions BEFORE creating LynxView
+        ExtensionRegistry.setupGlobal(this)
 
         var uri = ""
         uri = if (BuildConfig.DEBUG == true) {
@@ -27,7 +28,6 @@ class MainActivity : Activity() {
         setContentView(lynxView)
 
         lynxView.renderTemplateUrl(uri, "")
-        ExtensionRegistry.setupGlobal(this)
     }
     
     private fun buildLynxView(): LynxView {

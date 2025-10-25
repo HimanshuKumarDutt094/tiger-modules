@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from '@lynx-js/react';
-import LynxLinking from 'lynxjs-linking-module';
+import LynxLinking from 'rfc-test';
 import { NativeLocalStorage as NativeLocalStorageModule } from 'local-storage-module';
 import './App.css';
 

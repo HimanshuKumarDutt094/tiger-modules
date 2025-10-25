@@ -1,24 +1,20 @@
-package com.modules.linking
+package com.rfc.tools
 
-import android.app.Activity
-import android.app.Application
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.os.Bundle
-import android.provider.Settings
-import android.util.Log
-import androidx.core.content.FileProvider
-import java.io.File
-import java.net.URLConnection
-import com.lynx.jsbridge.LynxMethod
-import com.lynx.jsbridge.LynxModule
+import com.rfc.tools.generated.LynxJsLinkingModuleSpec
 import com.lynx.react.bridge.Callback
 import com.lynx.react.bridge.ReadableArray
 import com.lynx.react.bridge.ReadableMap
+import com.tigermodule.autolink.LynxNativeModule
 
-class LynxjsLinkingModule(context: Context) : LynxModule(context) {
+/**
+ * Implementation of LynxJsLinkingModule
+ * Extend the generated base class and implement your logic
+ */
+@LynxNativeModule(name = "LynxJsLinkingModule")
+class LynxJsLinkingModule(context: Context) : LynxJsLinkingModuleSpec(context) {
 
+ 
   companion object {
     var initialUrl: String? = null
     private var installed = false
@@ -84,7 +80,7 @@ class LynxjsLinkingModule(context: Context) : LynxModule(context) {
     }
   }
 
-  fun openURL(url: String, callback: Callback) {
+  override fun openURL(url: String, callback: Callback) {
     try {
       val intent = Intent(Intent.ACTION_VIEW)
       intent.data = Uri.parse(url)
@@ -112,7 +108,7 @@ class LynxjsLinkingModule(context: Context) : LynxModule(context) {
     callback.invoke(initialUrl)
   }
 
-  fun openSettings(callback: Callback) {
+  override fun openSettings(callback: Callback) {
     try {
       val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
   val uri = Uri.fromParts("package", getContext().packageName, null)
@@ -125,7 +121,7 @@ class LynxjsLinkingModule(context: Context) : LynxModule(context) {
     }
   }
 
-  fun sendIntent(action: String, extras: ReadableArray?, callback: Callback) {
+  override fun sendIntent(action: String, extras: ReadableArray?, callback: Callback) {
     try {
       val intent = Intent(action)
       if (extras != null) {
@@ -160,7 +156,7 @@ class LynxjsLinkingModule(context: Context) : LynxModule(context) {
    * content: string (text or file://...)
    * options: map with optional keys: "mimeType" (string), "dialogTitle" (string)
    */
-  fun share(content: String?, options: ReadableMap?, callback: Callback) {
+ override fun share(content: String?, options: ReadableMap?, callback: Callback) {
     try {
       if (content == null) {
         callback.invoke("Content cannot be null")

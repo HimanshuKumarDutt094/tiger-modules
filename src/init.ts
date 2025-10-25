@@ -1,23 +1,20 @@
 #!/usr/bin/env node
 import { mkdirpSync, writeJsonSync } from "fs-extra/esm";
 import path from "path";
-import { text, cancel, isCancel, select } from "@clack/prompts";
+import { text, cancel, isCancel, select, multiselect } from "@clack/prompts";
 import chalk from "chalk";
 import { writeFileSync } from "fs";
-import { validateAutolinkConfig } from "./autolink/validation.js";
 /// <reference path="./module.global.d.ts" />
 const pascalCheck = (input: string) => /^[A-Z][A-Za-z]*$/.test(input);
 const packageNameCheck = (input: string) => /^[a-z0-9-]+$/.test(input);
 
 export async function initModule(
   providedProjectName?: string,
-  providedModuleName?: string,
   language?: string,
 ) {
   console.log(chalk.cyanBright("\n✨ Create Lynx Autolink Extension\n"));
 
   let projectName = providedProjectName;
-  let moduleName = providedModuleName;
 
   // Get project name first
   if (!projectName) {
@@ -41,24 +38,20 @@ export async function initModule(
     }
   }
 
-  // Get module name second
-  if (!moduleName) {
-    const answer = await text({
-      message: "Module name (e.g. LocalStorage):",
-      validate(value) {
-        if (!value) return "Module name required";
-        if (!pascalCheck(value)) return "Must be PascalCase";
-      },
-    });
-    if (isCancel(answer)) return cancel("Cancelled");
-    moduleName = String(answer);
-  } else {
-    // validate provided name
-    if (!pascalCheck(moduleName)) {
-      console.error("Module name must be PascalCase (e.g. LocalStorage)");
-      process.exit(1);
-    }
-  }
+  // Multi-select extension types (RFC requirement)
+  const extensionTypes = await multiselect({
+    message: "Please select the extension types included in this package:",
+    options: [
+      { value: "nativeModule", label: "Native Module" },
+      { value: "element", label: "Element" },
+      { value: "service", label: "Service" },
+    ],
+    required: true,
+  });
+  if (isCancel(extensionTypes)) return cancel("Cancelled");
+
+  const selectedTypes = extensionTypes as string[];
+  console.log(chalk.green(`Selected: ${selectedTypes.map(t => t.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())).join(', ')}`));
 
   const androidPackageName = await text({
     message: "Android package name:",
@@ -87,28 +80,98 @@ export async function initModule(
     selectedLanguage = String(languageAnswer);
   }
 
-  if (!moduleName) throw new Error("moduleName missing");
   if (!projectName) throw new Error("projectName missing");
 
   const dir = path.join(process.cwd(), projectName);
   mkdirpSync(dir);
   mkdirpSync(path.join(dir, "src"));
 
-  // --- TS stub ---
+  // Generate TypeScript interfaces based on selected types
+  let moduleInterfaces = '';
+  let moduleExports = '';
+  let nativeModules: Array<{name: string, className: string}> = [];
+  let elements: string[] = [];
+  let services: string[] = [];
+
+  if (selectedTypes.includes('nativeModule')) {
+    const moduleName = await text({
+      message: "Native Module name (e.g. LocalStorage):",
+      validate(value) {
+        if (!value) return "Module name required";
+        if (!pascalCheck(value)) return "Must be PascalCase";
+      },
+    });
+    if (isCancel(moduleName)) return cancel("Cancelled");
+    
+    const moduleNameStr = String(moduleName);
+    moduleInterfaces += `// ${moduleNameStr} module interface
+export interface ${moduleNameStr}Module extends TigerModule {
+  helloWorld(name: string): string;
+}
+
+`;
+    moduleExports += `export { ${moduleNameStr}Module } from "./module";\n`;
+    nativeModules.push({
+      name: moduleNameStr,
+      className: `${moduleNameStr}Module`
+    });
+  }
+
+  if (selectedTypes.includes('element')) {
+    const elementName = await text({
+      message: "Element name (e.g. Button):",
+      validate(value) {
+        if (!value) return "Element name required";
+        if (!pascalCheck(value)) return "Must be PascalCase";
+      },
+    });
+    if (isCancel(elementName)) return cancel("Cancelled");
+    
+    const elementNameStr = String(elementName);
+    moduleInterfaces += `// ${elementNameStr} element interface
+export interface ${elementNameStr}Props {
+  // Define your element props here
+}
+
+`;
+    moduleExports += `export { ${elementNameStr}Props } from "./module";\n`;
+    elements.push(elementNameStr);
+  }
+
+  if (selectedTypes.includes('service')) {
+    const serviceName = await text({
+      message: "Service name (e.g. LogService):",
+      validate(value) {
+        if (!value) return "Service name required";
+        if (!pascalCheck(value)) return "Must be PascalCase";
+      },
+    });
+    if (isCancel(serviceName)) return cancel("Cancelled");
+    
+    const serviceNameStr = String(serviceName);
+    moduleInterfaces += `// ${serviceNameStr} service interface
+export interface ${serviceNameStr} {
+  // Define your service methods here
+}
+
+`;
+    moduleExports += `export { ${serviceNameStr} } from "./module";\n`;
+    services.push(serviceNameStr);
+  }
+
+  // --- TS interfaces ---
   const moduleFile = "src/module.ts";
   writeFileSync(
     path.join(dir, moduleFile),
-    `// ${moduleName} module interface
-    import {type TigerModule } from "tiger-module/runtime";
-export interface ${moduleName}Module extends TigerModule {
-  helloWorld(name: string): string;
-}
-`,
+    `import { type TigerModule } from "tiger-module/runtime";
+
+${moduleInterfaces}`,
   );
+  
   const srcFile = "src/index.ts";
   writeFileSync(
     path.join(dir, srcFile),
-    `import { ${moduleName}Module } from "./module";`,
+    moduleExports,
   );
   // --- package.json ---
   writeJsonSync(
@@ -219,45 +282,51 @@ export default defineConfig({
     }
   },
   dependencies: [],
-  nativeModules: [
-    {
-      name: '${moduleName}',
-      className: '${moduleName}Module'
-    }
-  ],
-  elements: [],
-  services: []
+  nativeModules: ${JSON.stringify(nativeModules, null, 4)},
+  elements: ${JSON.stringify(elements, null, 4)},
+  services: ${JSON.stringify(services, null, 4)}
 });
 `;
 
     writeFileSync(path.join(dir, "tiger.config.ts"), configContent);
 
-    // Create platform directories
-    mkdirpSync(path.join(dir, "android", "src", "main"));
+    // Create platform directories with RFC structure
+    mkdirpSync(path.join(dir, "android", "src", "main", "kotlin"));
     mkdirpSync(path.join(dir, "ios", "src"));
     mkdirpSync(path.join(dir, "web", "src"));
+    
+    // Create example directory structure (RFC requirement)
+    mkdirpSync(path.join(dir, "example", "android"));
+    mkdirpSync(path.join(dir, "example", "ios"));
+    mkdirpSync(path.join(dir, "example", "web"));
+    mkdirpSync(path.join(dir, "example", "src"));
 
     console.log(chalk.greenBright("\n✅ Autolink extension scaffold created!"));
     console.log(chalk.cyanBright("\nNext steps:"));
     console.log(chalk.yellow(`  1. cd ${projectName}`));
     console.log(
-      chalk.yellow(`  2. Update src/module.ts with your module interface`),
+      chalk.yellow(`  2. Update src/module.ts with your interfaces`),
     );
     console.log(
-      chalk.yellow(`  3. Update tiger.config.ts configuration if needed`),
+      chalk.yellow(`  3. npm run codegen - generates base classes in generated/ folders`),
     );
-    console.log(chalk.yellow(`  4. npm run codegen`));
-    console.log(
-      chalk.yellow(
-        `  5. Implement native code in android/, ios/, and web/ directories`,
-      ),
-    );
-    console.log(chalk.yellow(`  6. npm run build`));
     console.log(
       chalk.yellow(
-        `  7. Publish to npm - extensions will auto-integrate via Autolink!`,
+        `  4. Implement native code that extends the generated base classes`,
       ),
     );
+    console.log(chalk.yellow(`  5. npm run build`));
+    console.log(
+      chalk.yellow(
+        `  6. Publish to npm - extensions will auto-integrate via Autolink!`,
+      ),
+    );
+    
+    console.log(chalk.cyanBright("\nGenerated structure:"));
+    selectedTypes.forEach(type => {
+      const typeName = type.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      console.log(chalk.gray(`  ✓ ${typeName} scaffolding created`));
+    });
   }
 }
 
