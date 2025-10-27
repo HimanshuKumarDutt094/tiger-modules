@@ -32,18 +32,7 @@ export function App(props: { onRender?: () => void }) {
     }
   }, []);
 
-  const handleSendIntent = useCallback(async () => {
-    try {
-      setStatus('Sending intent...');
-      await LynxLinking.sendIntent('android.intent.action.VIEW', [
-        { key: 'android.intent.extra.PHONE_NUMBER', value: '+9134567890' },
-      ]);
-      setStatus('Intent sent successfully!');
-    } catch (error) {
-      setStatus(`Error sending intent: ${error}`);
-    }
-  }, []);
-
+ 
   const handleShareText = useCallback(async () => {
     try {
       setStatus('Sharing text...');
@@ -198,19 +187,7 @@ export function App(props: { onRender?: () => void }) {
             </text>
           </view>
 
-          <view
-            bindtap={handleSendIntent}
-            style={{
-              backgroundColor: '#ffc107',
-              padding: '12px',
-              borderRadius: '8px',
-              alignItems: 'center',
-            }}
-          >
-            <text style={{ color: 'black', fontSize: '16px' }}>
-              Send Intent (Call Phone)
-            </text>
-          </view>
+        
 
           <view
             bindtap={handleShareText}

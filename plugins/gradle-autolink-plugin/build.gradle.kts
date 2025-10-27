@@ -23,6 +23,9 @@ dependencies {
     // For bytecode analysis (annotation scanning)
     implementation("org.ow2.asm:asm:9.6")
     
+    // For type-safe Kotlin code generation
+    implementation("com.squareup:kotlinpoet:1.16.0")
+    
     // Testing
     testImplementation("junit:junit:4.13.2")
     testImplementation(gradleTestKit())
@@ -33,19 +36,12 @@ gradlePlugin {
     vcsUrl = "https://github.com/HimanshuKumarDutt094/tiger-modules.git"
     
     plugins {
-        create("tigerModuleExtensionSettings") {
-            id = "io.github.himanshukumardutt094.extension-settings"
-            implementationClass = "com.tigermodule.autolink.TigerModuleExtensionSettingsPlugin"
-            displayName = "TigerModule Extension Settings Plugin"
-            description = "Gradle settings plugin for discovering and configuring TigerModule extensions in node_modules. Automatically scans for tiger.config.json files and prepares extensions for integration."
-            tags = listOf("tigermodule", "autolink", "native-modules", "android", "settings", "discovery")
-        }
-        create("tigerModuleExtensionBuild") {
-            id = "io.github.himanshukumardutt094.extension-build"
-            implementationClass = "com.tigermodule.autolink.TigerModuleExtensionBuildPlugin"
-            displayName = "TigerModule Extension Build Plugin"
-            description = "Gradle build plugin for integrating TigerModule extensions into Android projects. Generates registry code and copies native source files automatically."
-            tags = listOf("tigermodule", "autolink", "native-modules", "android", "build", "codegen")
+        create("tigerModuleAutolink") {
+            id = "io.github.himanshukumardutt094.tiger-autolink"
+            implementationClass = "com.tigermodule.autolink.TigerModuleAutolinkPlugin"
+            displayName = "TigerModule Autolink Plugin"
+            description = "Unified Gradle plugin for TigerModule extension autolink. Discovers extensions in node_modules, generates registry code, and integrates native modules automatically. Apply in both settings.gradle.kts and build.gradle.kts."
+            tags = listOf("tigermodule", "autolink", "native-modules", "android", "lynxjs", "codegen", "discovery")
         }
     }
 }

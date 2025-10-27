@@ -5,8 +5,8 @@
 
 import fs from "fs";
 import path from "path";
-import { convertType } from "../util";
-import type { MethodInfo, CodegenContext } from "./types";
+import { convertType } from "../../utils/type-converter.js";
+import type { MethodInfo, CodegenContext } from "../types.js";
 
 export function generateService(
   serviceName: string,

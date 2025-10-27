@@ -2,272 +2,256 @@
 
 ## Overview
 
-This design extends the tiger-module codegen system to support custom Android view types through JSDoc annotations. The solution allows developers to specify Android view types like `AppCompatEditText`, `Button`, or `RecyclerView` in their TypeScript interface definitions, which the codegen will use to generate appropriate `LynxUI<CustomViewType>` base classes.
+This design outlines the refactoring of the custom native element generation system to eliminate the intermediate spec file approach. The new system will generate complete, self-contained element classes that users can directly modify, simplifying the development workflow and reducing complexity.
 
 ## Architecture
 
-### Current Architecture
+### Current Architecture (To Be Removed)
+
 ```
-TypeScript Interface → Parser → Codegen → LynxUI<View> (hardcoded)
+TypeScript Interface → Codegen → Spec File (Abstract) + Implementation File (Extends Spec)
+                                     ↓
+                               User extends spec file
 ```
 
-### Enhanced Architecture
-```
-TypeScript Interface + JSDoc → Enhanced Parser → View Type Resolver → Codegen → LynxUI<CustomViewType>
-```
+### New Architecture (Target)
 
-### Key Components
-
-1. **JSDoc Annotation Parser**: Extracts `@androidViewType` annotations from TypeScript interfaces
-2. **View Type Resolver**: Validates and resolves Android view types to their full class names
-3. **Enhanced Codegen Engine**: Generates platform-specific code with custom view types
-4. **Import Manager**: Handles automatic import generation for custom Android view types
+```
+TypeScript Interface → Codegen → Complete Element Class (with annotations, default View type)
+                                     ↓
+                               User modifies element class directly
+```
 
 ## Components and Interfaces
 
-### JSDoc Annotation Format
+### 1. Element Generation System
 
-```typescript
-/**
- * ExplorerInput element interface
- * @androidViewType androidx.appcompat.widget.AppCompatEditText
- */
-export interface ExplorerInputProps {
-  value?: string;
-  placeholder?: string;
-  // ... other props
+#### Modified Components
+
+**`src/codegen/elements.ts`**
+- **generateAndroidElement()**: Remove spec file generation, create complete element class
+- **generateKotlinElement()**: Remove - no longer needed as separate function
+- **generateKotlinElementImplementation()**: Merge logic into main generation function
+- **generateJavaElement()**: Remove - no longer needed as separate function  
+- **generateJavaElementImplementation()**: Merge logic into main generation function
+
+#### New Element Class Structure
+
+```kotlin
+@LynxElement(name = "elementname")
+class ElementName(context: LynxContext) : LynxUI<View>(context) {
+    
+    override fun createView(context: Context): View {
+        // Generated view instantiation with TODO comments for user customization
+        return View(context).apply {
+            // TODO: Configure your View properties here
+        }
+    }
+    
+    @LynxProp(name = "propertyName")
+    fun setPropertyName(propertyName: Type?) {
+        // Generated property setter with TODO comments
+        // TODO: Update your View with propertyName
+    }
+    
+    // Helper methods for event emission
+    protected fun emitEvent(name: String, value: Map<String, Any>?) {
+        val detail = LynxCustomEvent(sign, name)
+        value?.forEach { (key, v) ->
+            detail.addDetail(key, v)
+        }
+        lynxContext.eventEmitter.sendCustomEvent(detail)
+    }
 }
 ```
 
-### TypeScript Import Resolution Issues
+### 2. File Generation Strategy
 
-The current codegen has several critical issues that need to be addressed:
+#### Directory Structure Changes
 
-1. **Missing Type Imports**: `BaseEvent` and `CSSProperties` are used but not imported
-2. **Duplicate Properties**: Common properties (className, id, style) are added twice
-3. **Type Resolution**: Types from the original interface are not properly resolved in generated files
+**Before:**
+```
+android/src/main/kotlin/com/package/
+├── generated/
+│   └── ElementNameSpec.kt (abstract base class)
+└── ElementName.kt (extends spec)
+```
 
-#### Current Problems in Generated Files
+**After:**
+```
+android/src/main/kotlin/com/package/
+└── ElementName.kt (complete implementation with annotations)
+```
 
-```typescript
-// PROBLEM: Missing imports
-declare module "@lynx-js/types" {
-  interface IntrinsicElements extends Lynx.IntrinsicElements {
-    "explorerinput": {
-      bindinput?: (e: BaseEvent<"input", { value: string }>) => void; // ❌ BaseEvent not imported
-      style?: string | CSSProperties; // ❌ CSSProperties not imported
-      className?: string; // ❌ Duplicated
-      className?: string; // ❌ Duplicated again
-    };
-  }
+#### Generation Logic
+
+1. **Single File Generation**: Create only the main element class file
+2. **Complete Implementation**: Include all necessary annotations and method stubs
+3. **User-Modifiable**: Generate with TODO comments for user customization
+4. **Simplified View Type**: Use standard View as default base type (no custom view type configuration)
+5. **Element Config Simplification**: Elements array contains only objects with "name" property
+
+### 3. Gradle Plugin Integration
+
+#### Discovery Mechanism
+
+The existing gradle plugin already supports `@LynxElement` annotation discovery:
+
+```kotlin
+// Current ExtensionRegistry generation (no changes needed)
+@LynxElement(name = "ExplorerInput")
+try {
+    LynxEnv.inst().addBehavior(object : Behavior("ExplorerInput") {
+        override fun createUI(context: LynxContext): ExplorerInput {
+            return ExplorerInput(context)
+        }
+    })
+    android.util.Log.d("ExtensionRegistry", "Registered element: ExplorerInput")
+} catch (e: Exception) {
+    android.util.Log.e("ExtensionRegistry", "Failed to register element ExplorerInput: ${e.message}")
 }
 ```
 
-#### Required Fix Strategy
+#### Class Pattern Detection
 
-```typescript
-// SOLUTION: Proper imports and deduplication
-import type { BaseEvent, CSSProperties } from "@lynx-js/types";
+The gradle plugin scans for classes matching:
+- Annotated with `@LynxElement(name = "...")`
+- Extends `LynxUI<ViewType>` pattern
+- Constructor signature: `(context: LynxContext)`
 
-declare module "@lynx-js/types" {
-  interface IntrinsicElements extends Lynx.IntrinsicElements {
-    "explorerinput": {
-      bindinput?: (e: BaseEvent<"input", { value: string }>) => void;
-      value?: string;
-      placeholder?: string;
-      maxlines?: number;
-      // Common properties added only once
-      className?: string;
-      id?: string;
-      style?: string | CSSProperties;
-    };
-  }
-}
-```
+### 4. Build System Integration
 
-### View Type Configuration
+#### File Copying Process
 
-```typescript
-interface AndroidViewTypeConfig {
-  viewType: string;           // Full class name (e.g., "androidx.appcompat.widget.AppCompatEditText")
-  shortName: string;          // Short name for imports (e.g., "AppCompatEditText")
-  packageName: string;        // Package for import (e.g., "androidx.appcompat.widget")
-  isValidated: boolean;       // Whether the type has been validated
-}
-```
-
-### Enhanced Parser Interface
-
-```typescript
-interface ElementInfo {
-  name: string;
-  properties: PropertyInfo[];
-  androidViewType?: AndroidViewTypeConfig;  // New field
-}
-```
+The existing build system already copies source files to dist:
+- Source files in `android/src/main/kotlin/` → `dist/android/src/main/kotlin/`
+- Maintains package structure and annotations
+- Preserves file permissions and timestamps
 
 ## Data Models
 
-### View Type Registry
-
-The system will maintain a registry of common Android view types:
+### Element Generation Context
 
 ```typescript
-const ANDROID_VIEW_TYPES = {
-  'View': {
-    fullName: 'android.view.View',
-    package: 'android.view',
-    shortName: 'View'
-  },
-  'AppCompatEditText': {
-    fullName: 'androidx.appcompat.widget.AppCompatEditText',
-    package: 'androidx.appcompat.widget',
-    shortName: 'AppCompatEditText'
-  },
-  'Button': {
-    fullName: 'android.widget.Button',
-    package: 'android.widget',
-    shortName: 'Button'
-  },
-  // ... more common types
-};
-```
-
-### Generated Code Structure
-
-#### Kotlin Base Class (with custom view type)
-```kotlin
-abstract class ExplorerInputSpec(context: LynxContext) : LynxUI<AppCompatEditText>(context) {
-  abstract override fun createView(context: Context): AppCompatEditText
-  // ... property methods
+interface ElementGenerationContext extends CodegenContext {
+  elementName: string;
+  properties: PropertyInfo[];
+  generateSpecFile: false; // Always false in new system
 }
 ```
 
-#### Kotlin Implementation Template
-```kotlin
-@LynxElement(name = "explorerinput")
-class ExplorerInput(context: LynxContext) : ExplorerInputSpec(context) {
-  
-  override fun createView(context: Context): AppCompatEditText {
-    return AppCompatEditText(context).apply {
-      // TODO: Configure your AppCompatEditText
-    }
-  }
-  // ... property implementations
+### Simplified Element Configuration
+
+```typescript
+// Old configuration (being removed)
+interface ElementConfig {
+  name: string;
+  androidViewType?: AndroidViewTypeConfig;
+}
+
+// New simplified configuration
+interface ElementConfig {
+  name: string; // Only name is required
 }
 ```
+
+### Property Information
+
+```typescript
+interface PropertyInfo {
+  name: string;
+  isOptional: boolean;
+  typeText: string;
+}
+```
+
+### Android View Type Configuration (Removed)
+
+The AndroidViewTypeConfig interface and related custom view type functionality will be removed. All elements will use the standard `android.view.View` as the base type, allowing users to modify the generated class to use their preferred view type.
 
 ## Error Handling
 
+### Generation Errors
+
+1. **Standard View Type**: Always use `android.view.View` as base type (no custom view type validation needed)
+2. **Property Type Conversion**: Use fallback types for unknown TypeScript types
+3. **File System Errors**: Graceful handling with detailed error messages
+4. **Import Resolution**: Standard imports for View and LynxUI framework
+
 ### Validation Strategy
 
-1. **JSDoc Parsing Errors**: Clear error messages for malformed annotations
-2. **Invalid View Types**: Validation against known Android view types registry
-3. **Import Resolution**: Fallback to default View type if custom type cannot be resolved
-4. **Compilation Safety**: Generated code must compile without manual intervention
-5. **TypeScript Import Issues**: Fix missing imports and duplicate property generation
-6. **Type Resolution**: Ensure all types from original interfaces are properly resolved in generated code
+1. **Pre-Generation Validation**: Verify element name and properties are valid
+2. **Post-Generation Validation**: Check generated file syntax and structure
+3. **Build-Time Validation**: Gradle plugin validates annotations and class structure
 
-### Critical Fixes Required
+### Error Recovery
 
-#### TypeScript Generation Issues
-1. **Import Management**: Automatically detect and import required types (`BaseEvent`, `CSSProperties`)
-2. **Property Deduplication**: Prevent duplicate properties in generated interfaces
-3. **Type Preservation**: Maintain original type definitions from source interfaces
-4. **Web Platform Types**: Ensure web-generated code uses proper DOM types instead of Lynx types
-
-### Error Messages
-
-```typescript
-const ERROR_MESSAGES = {
-  INVALID_ANDROID_VIEW_TYPE: (type: string) => 
-    `Invalid Android view type: ${type}. Must be a valid Android View class.`,
-  MALFORMED_ANNOTATION: (annotation: string) => 
-    `Malformed @androidViewType annotation: ${annotation}. Expected format: @androidViewType full.package.ClassName`,
-  VIEW_TYPE_NOT_FOUND: (type: string) => 
-    `Android view type not found in registry: ${type}. Using default View type.`
-};
-```
+1. **Partial Generation**: Continue with other elements if one fails
+2. **Fallback Generation**: Generate basic template if advanced features fail
+3. **User Notification**: Clear error messages with suggested fixes
 
 ## Testing Strategy
 
 ### Unit Tests
 
-1. **JSDoc Parser Tests**: Verify correct parsing of various annotation formats
-2. **View Type Resolver Tests**: Test validation and resolution of Android view types
-3. **Codegen Tests**: Verify generated code correctness for different view types
-4. **Import Manager Tests**: Test automatic import generation
+1. **Element Generation Tests**: Verify correct file generation for simplified configurations
+2. **Property Handling Tests**: Test property type conversion and annotation generation
+3. **Standard View Generation Tests**: Validate standard View type usage and import generation
+4. **Error Handling Tests**: Test graceful failure scenarios
 
 ### Integration Tests
 
-1. **End-to-End Codegen**: Test complete flow from TypeScript interface to generated Kotlin code
-2. **Compilation Tests**: Verify generated code compiles successfully
-3. **Backward Compatibility**: Ensure existing elements without annotations continue to work
+1. **End-to-End Generation**: Test complete workflow from TypeScript interface to generated files
+2. **Gradle Plugin Integration**: Verify element discovery and registration
+3. **Build System Integration**: Test file copying and distribution
+4. **Multi-Platform Generation**: Ensure iOS and Web generation still works
 
-### Test Cases
+### Test Data
 
 ```typescript
-describe('Android View Type Support', () => {
-  test('should parse valid @androidViewType annotation', () => {
-    // Test JSDoc parsing
-  });
-  
-  test('should generate LynxUI<AppCompatEditText> for AppCompatEditText type', () => {
-    // Test codegen output
-  });
-  
-  test('should fallback to View for invalid types', () => {
-    // Test error handling
-  });
-  
-  test('should maintain backward compatibility', () => {
-    // Test existing interfaces without annotations
-  });
-});
+// Test element configurations (simplified)
+const testElements = [
+  { name: "TestButton" }, // Only name is required
+  { name: "TestInput" }
+];
+
+// Properties are automatically parsed from TypeScript interfaces like:
+// interface TestButtonProps {
+//   title: string;
+//   disabled?: boolean;
+// }
 ```
+
+### Backward Compatibility Testing
+
+1. **Existing Projects**: Ensure existing projects continue to work
+2. **Migration Path**: Test conversion from spec-based to direct implementation
+3. **Native Module Compatibility**: Verify native modules (which keep spec files) still work
 
 ## Implementation Phases
 
-### Phase 1: Fix Critical TypeScript Generation Issues
-- Fix missing imports for `BaseEvent` and `CSSProperties` in generated TypeScript files
-- Eliminate duplicate property generation in module augmentation
-- Ensure proper type resolution from source interfaces
-- Fix web platform code generation to use appropriate DOM types
+### Phase 1: Configuration Simplification
+- Update ElementConfig interface to only require "name" property
+- Remove AndroidViewTypeConfig support from element generation
+- Update parsers to handle simplified element configuration
 
-### Phase 2: JSDoc Parser Enhancement
-- Extend existing parser to extract JSDoc annotations
-- Add view type configuration data structures
-- Implement basic validation
+### Phase 2: Core Generation Refactoring
+- Modify `generateAndroidElement()` to create complete classes with standard View type
+- Remove spec file generation logic
+- Update property and method generation to use direct implementation
 
-### Phase 3: Codegen Engine Updates
-- Modify Kotlin codegen to use custom view types
-- Update import generation logic for Android view types
-- Enhance template generation for custom view types
-- Ensure web codegen uses proper web types
+### Phase 3: Template Enhancement
+- Improve generated code quality with better TODO comments
+- Add standard View instantiation examples
+- Enhance property implementation templates with generic View handling
 
-### Phase 4: Error Handling & Validation
-- Implement comprehensive validation
-- Add error reporting and fallback mechanisms
-- Create view type registry
+### Phase 4: Cleanup and Optimization
+- Remove unused spec generation functions
+- Remove AndroidViewTypeConfig related code
+- Clean up imports and dependencies
+- Optimize file generation performance
 
-### Phase 5: Testing & Documentation
-- Comprehensive test suite
-- Update documentation and examples
-- Backward compatibility verification
-
-### Priority Order
-
-**CRITICAL (Phase 1)**: The TypeScript generation issues must be fixed first as they prevent the generated code from compiling and being usable.
-
-**HIGH (Phases 2-3)**: Android view type support is the main feature request.
-
-**MEDIUM (Phases 4-5)**: Polish and testing to ensure production readiness.
-
-## Backward Compatibility
-
-The design ensures full backward compatibility:
-
-1. **Default Behavior**: Elements without `@androidViewType` annotations continue to use `View`
-2. **Existing Code**: No changes required to existing TypeScript interfaces
-3. **Generated Code**: Existing generated code remains valid
-4. **API Stability**: No breaking changes to public APIs
+### Phase 5: Testing and Validation
+- Comprehensive testing of new simplified generation system
+- Validation of gradle plugin compatibility
+- End-to-end workflow testing with simplified configuration

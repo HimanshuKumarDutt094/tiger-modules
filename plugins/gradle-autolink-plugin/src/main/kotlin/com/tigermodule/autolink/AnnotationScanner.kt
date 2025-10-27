@@ -19,13 +19,13 @@ class AnnotationScanner {
      * Discovered extension information from annotations
      */
     data class DiscoveredExtension(
-        val type: ExtensionType,
+        val type: Type,
         val className: String,
-        val name: String,
+        val annotationName: String, // The name from the annotation (e.g., "explorer-input")
         val packageName: String
     )
     
-    enum class ExtensionType {
+    enum class Type {
         NATIVE_MODULE,
         ELEMENT,
         SERVICE
@@ -149,9 +149,9 @@ class AnnotationScanner {
                     // LynxService doesn't have parameters, so we can add it immediately
                     discoveries.add(
                         DiscoveredExtension(
-                            type = ExtensionType.SERVICE,
+                            type = Type.SERVICE,
                             className = className,
-                            name = className, // Use class name as service name
+                            annotationName = className, // Use class name as service name
                             packageName = packageName
                         )
                     )
@@ -175,9 +175,9 @@ class AnnotationScanner {
             if (name == "name" && value is String) {
                 discoveries.add(
                     DiscoveredExtension(
-                        type = ExtensionType.NATIVE_MODULE,
+                        type = Type.NATIVE_MODULE,
                         className = className,
-                        name = value,
+                        annotationName = value,
                         packageName = packageName
                     )
                 )
@@ -198,9 +198,9 @@ class AnnotationScanner {
             if (name == "name" && value is String) {
                 discoveries.add(
                     DiscoveredExtension(
-                        type = ExtensionType.ELEMENT,
+                        type = Type.ELEMENT,
                         className = className,
-                        name = value,
+                        annotationName = value,
                         packageName = packageName
                     )
                 )
@@ -226,7 +226,7 @@ class AnnotationScanner {
             if (discoveries.isNotEmpty()) {
                 println("   📦 ${ext.name}: Found ${discoveries.size} annotated class(es)")
                 discoveries.forEach { discovery ->
-                    println("      ${discovery.type.name.lowercase()}: ${discovery.className} (name: ${discovery.name})")
+                    println("      ${discovery.type.name.lowercase()}: ${discovery.className} (name: ${discovery.annotationName})")
                 }
                 allDiscoveries[ext.name] = discoveries
             } else {
@@ -245,15 +245,15 @@ class AnnotationScanner {
         discoveries: List<DiscoveredExtension>
     ): AutolinkConfig {
         val nativeModules = discoveries
-            .filter { it.type == ExtensionType.NATIVE_MODULE }
-            .map { NativeModuleConfig(name = it.name, className = it.className) }
+            .filter { it.type == Type.NATIVE_MODULE }
+            .map { NativeModuleConfig(name = it.annotationName, className = it.className) }
         
         val elements = discoveries
-            .filter { it.type == ExtensionType.ELEMENT }
-            .map { ElementConfig(name = it.name, customView = null) }
+            .filter { it.type == Type.ELEMENT }
+            .map { ElementConfig(name = it.annotationName) }
         
         val services = discoveries
-            .filter { it.type == ExtensionType.SERVICE }
+            .filter { it.type == Type.SERVICE }
             .map { it.className }
         
         return extensionPackage.config.copy(

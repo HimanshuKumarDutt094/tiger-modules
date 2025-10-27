@@ -17,19 +17,13 @@ data class NativeModuleConfig(
 )
 
 /**
- * Element configuration with optional custom view type
+ * Element configuration (simplified to only require name)
  */
 data class ElementConfig(
-    val name: String,
-    val customView: CustomViewConfig? = null
-)
-
-/**
- * Custom view configuration for elements
- */
-data class CustomViewConfig(
     val name: String
 )
+
+
 
 /**
  * Data classes representing tiger.config.json configuration structure

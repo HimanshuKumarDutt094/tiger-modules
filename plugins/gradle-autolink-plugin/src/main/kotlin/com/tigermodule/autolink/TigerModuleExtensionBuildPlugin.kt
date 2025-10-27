@@ -22,28 +22,7 @@ import java.security.MessageDigest
  */
 class TigerModuleExtensionBuildPlugin : Plugin<Project> {
     
-    /**
-     * Generates a hash of file content
-     */
-    private fun generateFileHash(file: File): String {
-        if (!file.exists()) return ""
-        
-        val digest = MessageDigest.getInstance("SHA-256")
-        val hashBytes = digest.digest(file.readBytes())
-        return hashBytes.joinToString("") { "%02x".format(it) }
-    }
-    
-    /**
-     * Checks if source file needs to be copied based on content hash
-     */
-    private fun shouldCopyFile(sourceFile: File, destFile: File): Boolean {
-        if (!destFile.exists()) return true
-        
-        val sourceHash = generateFileHash(sourceFile)
-        val destHash = generateFileHash(destFile)
-        
-        return sourceHash != destHash
-    }
+
     
     override fun apply(project: Project) {
         println("🔌 TigerModule Extension Build Plugin v${BuildConfig.VERSION}")
@@ -68,84 +47,102 @@ class TigerModuleExtensionBuildPlugin : Plugin<Project> {
         println("   Found ${extensions.size} extension(s)")
         println()
         
-        // Register task to copy extension source files
-        val copyExtensionSourcesTask = project.tasks.register("copyTigerModuleExtensionSources") {
+        // Register task to generate annotations
+        val generateAnnotationsTask = project.tasks.register("generateTigerModuleAnnotations") {
             group = "tigermodule"
-            description = "Copies native source files from TigerModule extensions"
+            description = "Generates TigerModule annotations for extension development"
             
             doLast {
-                println("📦 Copying extension source files...")
+                println("📝 Generating TigerModule annotations...")
                 
-                extensions.forEach { ext ->
-                    val androidConfig = ext.config.platforms.android ?: return@forEach
-                    
-                    // Source: extension's android directory
-                    val extensionAndroidDir = File(ext.path, androidConfig.sourceDir)
-                    
-                    if (!extensionAndroidDir.exists()) {
-                        println("   ⚠️  Source directory not found: ${extensionAndroidDir.absolutePath}")
-                        return@forEach
-                    }
-                    
-                    // Destination: app's generated sources
-                    val packagePath = androidConfig.packageName.replace('.', '/')
-                    val destDir = File(
-                        project.layout.buildDirectory.get().asFile,
-                        "generated/source/tigermodule-extensions/main/java/$packagePath"
-                    )
-                    
-                    destDir.mkdirs()
-                    
-                    // Copy Kotlin/Java files from the package directory
-                    // Check both java/ and kotlin/ directories
-                    val javaPackageDir = File(extensionAndroidDir, "java/$packagePath")
-                    val kotlinPackageDir = File(extensionAndroidDir, "kotlin/$packagePath")
-                    
-                    var filesCopied = false
-                    
-                    // Copy from java/ directory if it exists
-                    if (javaPackageDir.exists()) {
-                        javaPackageDir.walkTopDown()
-                            .filter { it.isFile && (it.extension == "kt" || it.extension == "java") }
-                            .forEach { sourceFile ->
-                                val destFile = File(destDir, sourceFile.name)
-                                destFile.parentFile.mkdirs()
-                                
-                                if (shouldCopyFile(sourceFile, destFile)) {
-                                    sourceFile.copyTo(destFile, overwrite = true)
-                                    println("   ✓ Copied: ${sourceFile.name}")
-                                    filesCopied = true
-                                } else {
-                                    println("   ⏭ Skipped: ${sourceFile.name} (unchanged)")
-                                }
-                            }
-                    }
-                    
-                    // Copy from kotlin/ directory if it exists
-                    if (kotlinPackageDir.exists()) {
-                        kotlinPackageDir.walkTopDown()
-                            .filter { it.isFile && (it.extension == "kt" || it.extension == "java") }
-                            .forEach { sourceFile ->
-                                val destFile = File(destDir, sourceFile.name)
-                                destFile.parentFile.mkdirs()
-                                
-                                if (shouldCopyFile(sourceFile, destFile)) {
-                                    sourceFile.copyTo(destFile, overwrite = true)
-                                    println("   ✓ Copied: ${sourceFile.name}")
-                                    filesCopied = true
-                                } else {
-                                    println("   ⏭ Skipped: ${sourceFile.name} (unchanged)")
-                                }
-                            }
-                    }
-                    
-                    if (!filesCopied) {
-                        println("   ⚠️  No source files found in:")
-                        println("      ${javaPackageDir.absolutePath}")
-                        println("      ${kotlinPackageDir.absolutePath}")
+                val annotationsDir = File(
+                    project.layout.buildDirectory.get().asFile,
+                    "generated/source/tigermodule/main/kotlin/com/tigermodule/autolink"
+                )
+                
+                annotationsDir.mkdirs()
+                
+                val annotationsFile = File(annotationsDir, "LynxAnnotations.kt")
+                annotationsFile.writeText("""
+package com.tigermodule.autolink
+
+/**
+ * Lynx Autolink Discovery Annotations
+ * These annotations are used to mark native modules, elements, and services
+ * for automatic discovery and registration by the Autolink framework.
+ * 
+ * Note: These are NOT the same as Lynx SDK annotations like @LynxMethod, @LynxProp, etc.
+ * Those come from the Lynx SDK itself (com.lynx.jsbridge.*, com.lynx.tasm.behavior.*)
+ */
+
+/**
+ * Marks a class as a Lynx Native Module for autolink discovery.
+ * The annotated class should extend the generated *Spec base class.
+ * 
+ * @param name The name of the native module as it will be exposed to JavaScript
+ */
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class LynxNativeModule(val name: String)
+
+/**
+ * Marks a class as a Lynx UI Element for autolink discovery.
+ * The annotated class should extend LynxUI and the generated *Spec base class.
+ * 
+ * @param name The tag name of the element as it will be used in Lynx templates
+ */
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class LynxElement(val name: String)
+
+/**
+ * Marks a class as a Lynx Service for autolink discovery.
+ * The annotated class should implement the service interface.
+ */
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class LynxService
+""".trimIndent())
+                
+                println("   ✅ Generated annotations at: ${annotationsFile.absolutePath}")
+                println()
+            }
+        }
+
+        // Register task to add extension dependencies (Lepo approach)
+        val addExtensionDependenciesTask = project.tasks.register("addTigerModuleExtensionDependencies") {
+            group = "tigermodule"
+            description = "Adds TigerModule extensions as project dependencies"
+            
+            doLast {
+                println("📦 Adding extension dependencies...")
+                
+                // Get included project names from settings plugin
+                @Suppress("UNCHECKED_CAST")
+                val includedProjects = try {
+                    project.rootProject.extensions.extraProperties.get("tigerModuleIncludedProjects") as? List<String>
+                } catch (e: Exception) {
+                    null
+                } ?: emptyList()
+                
+                if (includedProjects.isEmpty()) {
+                    println("   ℹ️  No extension subprojects to add as dependencies")
+                    return@doLast
+                }
+                
+                // Add dependencies to included extension subprojects
+                project.dependencies.apply {
+                    includedProjects.forEach { projectName ->
+                        try {
+                            add("implementation", project.project(projectName))
+                            println("   ✅ Added dependency: $projectName")
+                        } catch (e: Exception) {
+                            println("   ⚠️  Failed to add dependency $projectName: ${e.message}")
+                        }
                     }
                 }
                 
+                println("   📦 Added ${includedProjects.size} extension dependencies")
                 println()
             }
         }
@@ -155,7 +152,7 @@ class TigerModuleExtensionBuildPlugin : Plugin<Project> {
             group = "tigermodule"
             description = "Generates ExtensionRegistry.kt for discovered TigerModule extensions using annotation scanning"
             
-            dependsOn(copyExtensionSourcesTask)
+            dependsOn(addExtensionDependenciesTask, generateAnnotationsTask)
             
             doLast {
                 println("🔨 Generating TigerModule Extension Registry...")
@@ -201,16 +198,15 @@ class TigerModuleExtensionBuildPlugin : Plugin<Project> {
                 // Hook into preBuild task
                 project.tasks.findByName("preBuild")?.dependsOn(generateRegistryTask)
                 
-                // Add generated source directories to Android sourceSet
+                // Make sure annotations and dependencies are added before compilation
+                project.tasks.findByName("compileDebugKotlin")?.dependsOn(generateAnnotationsTask, addExtensionDependenciesTask)
+                project.tasks.findByName("compileReleaseKotlin")?.dependsOn(generateAnnotationsTask, addExtensionDependenciesTask)
+                
+                // Add generated annotation source directory to Android sourceSet
                 try {
                     val generatedSourceDir = File(
                         project.layout.buildDirectory.get().asFile,
                         "generated/source/tigermodule/main/kotlin"
-                    )
-                    
-                    val extensionSourceDir = File(
-                        project.layout.buildDirectory.get().asFile,
-                        "generated/source/tigermodule-extensions/main/java"
                     )
                     
                     // Add to Android source sets using reflection (works with both AGP 7.x and 8.x)
@@ -225,15 +221,14 @@ class TigerModuleExtensionBuildPlugin : Plugin<Project> {
                         
                         val srcDirMethod = javaSourceSet.javaClass.getMethod("srcDir", Any::class.java)
                         srcDirMethod.invoke(javaSourceSet, generatedSourceDir)
-                        srcDirMethod.invoke(javaSourceSet, extensionSourceDir)
                         
-                        println("   ✅ Added generated sources to Android source sets")
+                        println("   ✅ Added generated annotation sources to Android source sets")
                     } catch (e: Exception) {
-                        println("   ⚠️  Could not add to source sets (will try alternative method): ${e.message}")
+                        println("   ⚠️  Could not add to source sets: ${e.message}")
                     }
                     
-                    println("   📁 Generated sources will be at: ${generatedSourceDir.absolutePath}")
-                    println("   📁 Extension sources will be at: ${extensionSourceDir.absolutePath}")
+                    println("   📁 Generated annotation sources at: ${generatedSourceDir.absolutePath}")
+                    println("   📁 Extension sources from subprojects (included via dependencies)")
                 } catch (e: Exception) {
                     println("   ⚠️  Could not configure source sets: ${e.message}")
                 }

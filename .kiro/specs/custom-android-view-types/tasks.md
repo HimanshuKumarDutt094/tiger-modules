@@ -1,121 +1,103 @@
 # Implementation Plan
 
-- [ ] 1. Fix critical TypeScript generation issues
-  - Fix missing imports for BaseEvent and CSSProperties in generated TypeScript module augmentation files
-  - Eliminate duplicate property generation in IntrinsicElements interface
-  - Ensure proper type resolution from source interfaces to generated code
-  - Fix web platform code generation to use appropriate DOM types instead of Lynx types
-  - _Requirements: 1.4, 2.4, 3.4_
+- [x] 1. Update configuration interfaces and types
 
-- [x] 1.1 Fix TypeScript module augmentation import issues
-  - Update generateTypeScriptModuleAugmentation function to detect and import required types
-  - Add import statements for BaseEvent and CSSProperties from @lynx-js/types
-  - Ensure all custom types from original interface are properly imported
-  - _Requirements: 1.4, 2.4_
+  - Update ElementConfig interface to only require "name" property
+  - Remove AndroidViewTypeConfig from element-related types
+  - Update CodegenConfig to use simplified element configuration
+  - _Requirements: 6.1, 6.4_
 
-- [x] 1.2 Fix duplicate property generation
-  - Modify property collection logic to prevent duplicate common properties (className, id, style)
-  - Ensure common properties are only added once to IntrinsicElements interface
-  - Update ExplorerInputProps interface generation to avoid duplicates
-  - _Requirements: 1.4, 3.4_
+- [x] 2. Modify element parsing system
 
-- [x] 1.3 Fix web platform code generation
-  - Update generateWebElement function to use proper DOM types instead of Lynx types
-  - Ensure web-generated code doesn't reference BaseEvent or CSSProperties inappropriately
-  - Use standard HTMLElement event types for web platform
-  - _Requirements: 1.5, 3.4_
+  - [x] 2.1 Update parseElementInterfaces function to handle simplified configuration
 
-- [ ]* 1.4 Add tests for TypeScript generation fixes
-  - Write unit tests to verify proper import generation
-  - Test duplicate property prevention
-  - Verify web platform type correctness
-  - _Requirements: 1.4, 2.4, 3.4_
+    - Remove AndroidViewTypeConfig parsing from element interfaces
+    - Ensure ElementInfo only contains name and properties
+    - _Requirements: 6.2, 6.5_
 
-- [x] 2. Implement JSDoc annotation parsing for Android view types
-  - Extend TypeScript AST parser to extract JSDoc comments from interface definitions
-  - Add support for @androidViewType annotation parsing
-  - Create AndroidViewTypeConfig data structure for storing parsed view type information
-  - Implement validation for JSDoc annotation format
-  - _Requirements: 2.1, 2.2, 2.4_
+  - [x] 2.2 Update orchestrator to use simplified element configuration
+    - Modify element processing loop to work with name-only configuration
+    - Remove AndroidViewTypeConfig handling from element generation calls
+    - _Requirements: 6.1, 6.3_
 
-- [x] 2.1 Create JSDoc parser utilities
-  - Implement function to extract JSDoc comments from TypeScript interfaces using ts-morph
-  - Add regex patterns to parse @androidViewType annotations
-  - Create validation logic for annotation format
-  - _Requirements: 2.1, 2.2_
+- [x] 3. Refactor Android element generation
 
-- [x] 2.2 Integrate JSDoc parsing into existing codegen pipeline
-  - Modify parser.ts to call JSDoc extraction during interface processing
-  - Update ElementInfo interface to include androidViewType field
-  - Ensure JSDoc parsing works with existing property extraction
-  - _Requirements: 2.1, 2.3_
+  - [x] 3.1 Modify generateAndroidElement function to create complete classes
 
-- [ ] 3. Create Android view type registry and validation
-  - Build registry of common Android view types with their full class names and import paths
-  - Implement validation logic to check if specified view types exist in registry
-  - Add fallback mechanism to use default View type for invalid specifications
-  - Create clear error messages for invalid view type specifications
-  - _Requirements: 1.3, 2.4, 3.1_
+    - Remove spec file generation logic
+    - Generate complete element class with @LynxElement annotation
+    - Use standard View as default base type
+    - _Requirements: 1.1, 1.5, 5.3_
 
-- [x] 3.1 Build Android view type registry
-  - Create ANDROID_VIEW_TYPES constant with common view types (View, Button, EditText, AppCompatEditText, etc.)
-  - Include full class names, package names, and short names for each type
-  - Add utility functions to resolve view types from registry
-  - _Requirements: 1.3, 3.1_
+  - [x] 3.2 Remove separate spec and implementation generation functions
 
-- [x] 3.2 Implement view type validation
-  - Create validation function to check if specified Android view type exists in registry
-  - Add warning system for unknown view types with fallback to View
-  - Implement error reporting with clear messages for invalid annotations
-  - _Requirements: 1.3, 2.4_
+    - Remove generateKotlinElement and generateJavaElement functions
+    - Remove generateKotlinElementImplementation and generateJavaElementImplementation functions
+    - Merge logic into single generation function
+    - _Requirements: 5.1, 5.4_
 
-- [x] 4. Update Kotlin codegen to support custom Android view types
-  - Modify generateKotlinElement function to use custom view types in LynxUI generic parameter
-  - Update import generation to include custom Android view type imports
-  - Enhance createView method signature to return specified view type
-  - Update implementation template generation to use custom view types
-  - _Requirements: 1.1, 3.2, 3.3_
+  - [x] 3.3 Create unified element class generation
+    - Generate complete Kotlin/Java classes with LynxUI<View> base
+    - Include @LynxProp annotations directly in main class
+    - Add TODO comments for user customization
+    - Include helper methods for event emission
+    - _Requirements: 1.2, 1.3, 3.1, 3.5_
 
-- [x] 4.1 Modify Kotlin base class generation
-  - Update LynxUI generic parameter from hardcoded View to custom view type
-  - Generate proper import statements for custom Android view types
-  - Ensure createView method returns the specified view type
-  - _Requirements: 1.1, 3.2_
+- [x] 4. Update file generation structure
 
-- [x] 4.2 Update Kotlin implementation template generation
-  - Modify implementation template to use custom view type in createView method
-  - Add proper view type instantiation in template comments
-  - Ensure generated implementation compiles with custom view types
-  - _Requirements: 3.2, 3.3_
+  - [x] 4.1 Modify directory structure to remove generated/ folders for elements
 
-- [x] 4.3 Add import management for Android view types
-  - Implement automatic import generation for custom Android view types
-  - Ensure imports are added to both base class and implementation files
-  - Handle package resolution for different Android view types
-  - _Requirements: 3.1, 3.4_
+    - Generate element classes directly in main source directory
+    - Remove generated/ subdirectory creation for elements
+    - _Requirements: 5.1, 5.3_
 
-- [ ] 5. Ensure backward compatibility and comprehensive testing
-  - Verify existing elements without @androidViewType annotations continue to work
-  - Test complete flow from TypeScript interface with JSDoc to generated Kotlin code
-  - Validate that generated code compiles successfully for various Android view types
-  - Create integration tests for end-to-end functionality
-  - _Requirements: 1.5, 3.5_
+  - [x] 4.2 Update import statements in generated classes
+    - Remove imports to spec files
+    - Add standard imports for View, LynxUI, and annotations
+    - _Requirements: 5.2, 5.4_
 
-- [ ] 5.1 Implement backward compatibility tests
-  - Test existing interfaces without JSDoc annotations continue to generate View-based code
-  - Verify no breaking changes to existing generated code
-  - Ensure API stability for existing functionality
-  - _Requirements: 1.5, 3.5_
+- [x] 5. Clean up AndroidViewTypeConfig related code
 
-- [ ] 5.2 Create end-to-end integration tests
-  - Test complete codegen flow with AppCompatEditText example
-  - Verify generated Kotlin code compiles and imports are correct
-  - Test multiple different Android view types (Button, RecyclerView, etc.)
-  - _Requirements: 1.1, 3.2, 3.4_
+  - [x] 5.1 Remove AndroidViewTypeConfig interface and related functions
 
-- [ ]* 5.3 Add comprehensive unit tests
-  - Test JSDoc parsing with various annotation formats
-  - Test view type validation and error handling
-  - Test import generation for different Android view types
-  - Test TypeScript generation fixes
-  - _Requirements: 1.3, 2.4, 3.1_
+    - Remove getAdditionalAndroidImports function
+    - Remove validateAndroidViewTypeImports function
+    - Remove view-specific instantiation examples
+    - _Requirements: 6.4_
+
+  - [x] 5.2 Simplify element generation parameters
+    - Remove androidViewType parameter from generation functions
+    - Update function signatures to not accept AndroidViewTypeConfig
+    - _Requirements: 6.2, 6.3_
+
+- [ ] 6. Update iOS and Web element generation
+
+  - [ ] 6.1 Modify generateIOSElement to remove spec file generation
+
+    - Generate complete Swift element class without separate spec file
+    - Use standard UIView as base type
+    - _Requirements: 1.1, 5.1_
+
+  - [ ] 6.2 Modify generateWebElement to remove spec file generation
+    - Generate complete Web element class without separate spec file
+    - Use standard HTMLElement as base type
+    - _Requirements: 1.1, 5.1_
+
+- [ ] 7. Update existing test files and examples
+
+  - [ ] 7.1 Update test configurations to use simplified element format
+
+    - Modify test data to only include name property
+    - Remove AndroidViewTypeConfig from test cases
+    - _Requirements: 6.1_
+
+  - [ ] 7.2 Update example projects to remove spec file dependencies
+    - Modify existing element implementations to not extend spec files
+    - Add @LynxElement annotations to existing implementations
+    - _Requirements: 5.2, 5.4_
+
+- [ ]\* 8. Add comprehensive tests for new generation system
+  - Write unit tests for simplified element generation
+  - Test property handling with standard View type
+  - Validate generated file structure and annotations
+  - _Requirements: 1.1, 1.2, 1.3_

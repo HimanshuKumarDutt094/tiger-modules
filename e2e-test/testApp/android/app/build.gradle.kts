@@ -100,7 +100,7 @@ dependencies {
     implementation("com.facebook.fresco:animated-webp:2.3.0")
     implementation("com.facebook.fresco:webpsupport:2.3.0")
     implementation("com.facebook.fresco:animated-base:2.3.0")
-
+implementation("androidx.appcompat:appcompat:1.7.0")
     // integrating log-service
     implementation("org.lynxsdk.lynx:lynx-service-log:3.4.1")
 

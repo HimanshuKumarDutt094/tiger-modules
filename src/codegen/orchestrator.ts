@@ -5,10 +5,10 @@
 
 import { parseInterfaces, parseElementInterfaces } from "./parser.js";
 import { loadCodegenConfig, validateConfig } from "./config.js";
-import { generateNativeModule } from "./modules.js";
-import { generateElement } from "./elements.js";
-import { generateService } from "./services.js";
-import type { CodegenContext, MethodInfo, PropertyInfo } from "./types.js";
+import { generateNativeModule } from "./generators/modules.js";
+import { generateElement } from "./generators/elements.js";
+import { generateService } from "./generators/services.js";
+import type { CodegenContext, MethodInfo } from "./types.js";
 
 export async function runCodegenOrchestrator(): Promise<void> {
   // Load and validate configuration
@@ -19,7 +19,7 @@ export async function runCodegenOrchestrator(): Promise<void> {
   const interfaceMethodsMap = parseInterfaces(
     config.srcFile,
     config.nativeModules.map((m) => m.className),
-    config.elements.map((el) => (typeof el === "string" ? el : el.name)),
+    config.elements.map((el) => el.name),
     config.services
   );
 
@@ -80,32 +80,26 @@ export async function runCodegenOrchestrator(): Promise<void> {
 
   // Process Elements (RFC requirement)
   for (const elementConfig of config.elements) {
-    // Handle both old string format and new ElementConfig format
-    const elementName =
-      typeof elementConfig === "string" ? elementConfig : elementConfig.name;
+    const elementName = elementConfig.name;
 
-    // Try to get ElementInfo from the new parser first
+    // Get ElementInfo from the parser
     const elementInfo = elementInfoMap.get(elementName);
 
     if (elementInfo) {
-      // Use the new ElementInfo-based generator
+      // Use the ElementInfo-based generator
       generateElement(elementInfo, codegenContext);
     } else {
-      // Fallback to old method for backward compatibility
-      const propsInterfaceName = `${elementName}Props`;
-      const propsOrMethods = interfaceMethodsMap.get(propsInterfaceName);
-
-      if (!propsOrMethods) {
-        console.warn(
-          `⚠️  No props interface found for element ${elementName}, creating basic template...`
-        );
-      }
-
-      // Type guard to ensure we have PropertyInfo[]
-      const properties = propsOrMethods as PropertyInfo[] | undefined;
-
-      // Use the old generator signature
-      generateElement(elementName, properties, codegenContext);
+      console.warn(
+        `⚠️  No props interface found for element ${elementName}, creating basic template...`
+      );
+      
+      // Create basic ElementInfo for elements without interfaces
+      const basicElementInfo = {
+        name: elementName,
+        properties: []
+      };
+      
+      generateElement(basicElementInfo, codegenContext);
     }
     generatedCount++;
   }

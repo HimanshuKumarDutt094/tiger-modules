@@ -16,14 +16,16 @@ public final class NativeLocalStorageModule: NSObject, LynxModule {
     }
 
     func setStorageItem(key: String, value: String) {
-        fatalError("Not implemented")
+        UserDefaults.standard.set(value, forKey: key)
     }
 
     func getStorageItem(key: String, callback: (Any) -> Void) {
-        fatalError("Not implemented")
+        let value = UserDefaults.standard.string(forKey: key)
+        callback(value as Any)
     }
 
     func clearStorage() {
-        fatalError("Not implemented")
+        let domain = Bundle.main.bundleIdentifier!
+        UserDefaults.standard.removePersistentDomain(forName: domain)
     }
 }

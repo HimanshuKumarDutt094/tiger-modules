@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 
-export { initModule } from "./init";
-export { runCodegen } from "./codegen";
+export { initModule } from "./commands/create.js";
+export { runCodegen } from "./commands/codegen.js";
 
 // Export configuration types and utilities
 export type {
   LynxExtConfig,
-  AutolinkConfig, // Legacy alias
   NativeModuleConfig,
   AndroidConfig,
   IOSConfig,

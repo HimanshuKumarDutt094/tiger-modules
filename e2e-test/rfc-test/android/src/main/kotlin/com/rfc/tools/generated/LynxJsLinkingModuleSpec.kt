@@ -26,8 +26,5 @@ abstract class LynxJsLinkingModuleSpec(context: Context) : LynxModule(context) {
   abstract fun openSettings(callback: Callback)
 
   @LynxMethod
-  abstract fun sendIntent(action: String, extras: ReadableArray?, callback: Callback?)
-
-  @LynxMethod
   abstract fun share(content: String, options: ReadableMap?, callback: Callback?)
 }

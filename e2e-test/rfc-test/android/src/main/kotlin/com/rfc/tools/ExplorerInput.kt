@@ -1,59 +1,88 @@
 package com.rfc.tools
 
 import android.content.Context
-import  androidx.appcompat.widget.AppCompatEditText
-import android.text.InputType
-import com.lynx.tasm.behavior.LynxContext
-import com.rfc.tools.generated.ExplorerInputSpec
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.inputmethod.InputMethodManager
+import androidx.appcompat.widget.AppCompatEditText
 import com.lynx.react.bridge.Callback
 import com.lynx.react.bridge.ReadableMap
+import com.lynx.tasm.behavior.LynxContext
+import com.lynx.tasm.behavior.LynxProp
+import com.lynx.tasm.behavior.LynxUIMethod
+import com.lynx.tasm.behavior.LynxUIMethodConstants
+import com.lynx.tasm.behavior.ui.LynxUI
+import com.lynx.tasm.event.LynxCustomEvent
 import com.tigermodule.autolink.LynxElement
 
-/**
- * Implementation of ExplorerInput element using AppCompatEditText
- * Extend the generated base class and implement your logic
- */
-@LynxElement(name = "explorerinput")
-class ExplorerInput(context: LynxContext) : ExplorerInputSpec(context) {
+@LynxElement(name = "explorer-input-demo")
+class ExplorerInput(context: LynxContext) : LynxUI<AppCompatEditText>(context) {
 
-  override fun createView(context: Context): AppCompatEditText {
-    return AppCompatEditText(context).apply {
+  private fun showSoftInput(): Boolean {
+    val imm = lynxContext.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    return imm.showSoftInput(mView, InputMethodManager.SHOW_IMPLICIT, null)
+  }
 
+  @LynxUIMethod
+  fun focus(params: ReadableMap, callback: Callback) {
+    if (mView.requestFocus()) {
+      if (showSoftInput()) {
+        callback.invoke(LynxUIMethodConstants.SUCCESS)
+      } else {
+        callback.invoke(LynxUIMethodConstants.UNKNOWN, "fail to show keyboard")
+      }
+    } else {
+      callback.invoke(LynxUIMethodConstants.UNKNOWN, "fail to focus")
     }
   }
 
-  override fun setBindinput(bindinput: Callback?) {
-    // TODO: Update AppCompatEditText with bindinput
-    // Example: view.bindinput = bindinput
+  override fun createView(context: Context): AppCompatEditText {
+    return AppCompatEditText(context).apply {
+      addTextChangedListener(object : TextWatcher {
+        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+        override fun afterTextChanged(s: Editable?) {
+          emitEvent("input", mapOf("value" to (s?.toString() ?: "")))
+        }
+      })
+    }
   }
 
-  override fun setClassName(className: String?) {
-    // TODO: Update AppCompatEditText with className
-    // Example: view.className = className
+  private fun emitEvent(name: String, value: Map<String, Any>?) {
+    val detail = LynxCustomEvent(sign, name)
+    value?.forEach { (key, v) ->
+      detail.addDetail(key, v)
+    }
+    lynxContext.eventEmitter.sendCustomEvent(detail)
   }
 
-  override fun setId(id: String?) {
-    // TODO: Update AppCompatEditText with id
-    // Example: view.id = id
+  override fun onLayoutUpdated() {
+    super.onLayoutUpdated()
+    val paddingTop = mPaddingTop + mBorderTopWidth
+    val paddingBottom = mPaddingBottom + mBorderBottomWidth
+    val paddingLeft = mPaddingLeft + mBorderLeftWidth
+    val paddingRight = mPaddingRight + mBorderRightWidth
+    mView.setPadding(paddingLeft, paddingTop, paddingRight, paddingBottom)
   }
 
-  override fun setStyle(style: Any?) {
-    // TODO: Update AppCompatEditText with style
-    // Example: view.style = style
+  @LynxProp(name = "value")
+  fun setValue(value: String?) {
+    if (value != mView.text.toString()) {
+      mView.setText(value)
+    }
   }
 
-  override fun setValue(value: Any?) {
-    // Update EditText value
-    view.setText(value)
+  @LynxProp(name = "placeholder")
+  fun setPlaceholder(placeholder: String?) {
+    mView.hint = placeholder
   }
 
-  override fun setMaxlines(maxlines: Double?) {
-    // TODO: Update AppCompatEditText with maxlines
-    // Example: view.maxlines = maxlines
-  }
-
-  override fun setPlaceholder(placeholder: String?) {
-    // Update EditText placeholder
-    view.hint = placeholder
+  @LynxProp(name = "maxlines")
+  fun setMaxlines(maxlines: Double?) {
+    maxlines?.let {
+      mView.maxLines = it.toInt()
+    }
   }
 }

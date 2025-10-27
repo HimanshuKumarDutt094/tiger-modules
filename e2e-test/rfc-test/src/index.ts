@@ -26,21 +26,6 @@ export async function openSettings(): Promise<void> {
   });
 }
 
-export async function sendIntent(
-  action: string,
-  extras?: Array<{ key: string; value: any }>,
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    try {
-      LynxjsLinkingModule.sendIntent(action, extras, (err?: string) => {
-        if (err) reject(new Error(err));
-        else resolve();
-      });
-    } catch (e) {
-      reject(e);
-    }
-  });
-}
 
 export async function share(
   content: string,
@@ -61,6 +46,5 @@ export async function share(
 export default {
   openURL,
   openSettings,
-  sendIntent,
   share,
 };

@@ -29,9 +29,7 @@ export default defineConfig({
   elements: [
     {
       name: "ExplorerInput",
-      customView: {
-        name: " androidx.appcompat.widget.AppCompatEditText"
-      }
+   
     }
 ],
   services: []

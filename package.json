@@ -5,7 +5,8 @@
   "type": "module",
   "license": "MIT",
   "bin": {
-    "tiger-module": "./dist/cli.js"
+    "tiger-module": "./dist/cli.js",
+    "tiger": "./bin/run.js"
   },
   "files": [
     "dist",
@@ -35,6 +36,7 @@
     "chalk": "^5.6.2",
     "commander": "^14.0.0",
     "ts-morph": "^27.0.2",
+    "ts-node": "^10.9.2",
     "tsdown": "^0.15.6",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
@@ -42,10 +44,17 @@
   "dependencies": {
     "@clack/prompts": "^0.11.0",
     "@lynx-js/types": "^3.4.11",
+    "@oclif/core": "^4.7.2",
     "fast-glob": "^3.2.12",
-    "filepermission": "link:filepermission",
-    "fs-extra": "^11.3.2"
+    "fs-extra": "^11.3.2",
+    "oclif": "^4.22.38"
   },
   "module": "./dist/index.js",
-  "packageManager": "bun@1.3.0"
+  "packageManager": "bun@1.3.0",
+  "oclif": {
+    "bin": "tiger",
+    "commands": "./dist/commands",
+    "dirname": "tiger",
+    "topicSeparator": " "
+  }
 }

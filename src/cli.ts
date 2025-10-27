@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { initModule } from "./init";
-import { runCodegen } from "./codegen";
-import buildModule from "./build";
+import { initModule } from "./commands/create.js";
+import { runCodegen } from "./commands/codegen.js";
+import { runBuildWithActions } from "./commands/build.js";
 
 const program = new Command();
 
@@ -43,7 +43,7 @@ program
   .command("build")
   .description("Build the extension package for distribution")
   .action(async () => {
-    await buildModule();
+    await runBuildWithActions();
   });
 
 // If no subcommand provided, show help

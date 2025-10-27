@@ -5,9 +5,9 @@
 
 import fs from "fs";
 import path from "path";
-import { convertType } from "../util";
-import type { MethodInfo, CodegenContext } from "./types";
-import type { NativeModuleConfig } from "../autolink/config";
+import { convertType } from "../../utils/type-converter.js";
+import type { MethodInfo, CodegenContext } from "../types.js";
+import type { NativeModuleConfig } from "../../autolink/config.js";
 
 export function generateNativeModule(
   moduleConfig: NativeModuleConfig,
@@ -34,6 +34,9 @@ export function generateNativeModule(
   } else {
     generateJavaModule(androidSpecFile, specClassName, className, androidPackageName, methods);
   }
+
+  // --- Generate Web Base Class (RFC compliant) ---
+  generateWebModule(className, methods);
 
   // Generate root TypeScript bindings (RFC requirement)
   generateRootTypeScriptBindings(className, methods);
@@ -300,6 +303,66 @@ ${javaImplMethods}
 }`;
     fs.writeFileSync(implFile, javaImplContent);
     console.log(`  ✅ Generated implementation template: ${className}.java`);
+  }
+}
+
+function generateWebModule(className: string, methods: MethodInfo[]): void {
+  const specClassName = `${className}Spec`;
+  
+  // Generate web spec file (RFC requirement)
+  const webSpecDir = path.join("./web/src/generated");
+  fs.mkdirSync(webSpecDir, { recursive: true });
+  
+  const webSpecFile = path.join(webSpecDir, `${specClassName}.ts`);
+  
+  const webSpecContent = `/**
+ * Generated base class for ${className}
+ * DO NOT EDIT - This file is auto-generated
+ * Extend this class in your implementation
+ */
+export abstract class ${specClassName} {
+${methods
+  .map((m) => {
+    const params = m.params
+      .map((p) => {
+        return `${p.paramName}${p.isOptional ? "?" : ""}: ${p.typeText}`;
+      })
+      .join(", ");
+
+    return `  abstract ${m.name}(${params}): ${m.returnType};`;
+  })
+  .join("\n\n")}
+}`;
+
+  fs.writeFileSync(webSpecFile, webSpecContent);
+  console.log(`  ✅ Generated Web Module base class: ${specClassName}.ts`);
+
+  // Generate implementation template (only if it doesn't exist)
+  const webImplFile = path.join("./web/src", `${className}.ts`);
+  
+  if (!fs.existsSync(webImplFile)) {
+    const webImplContent = `import { ${specClassName} } from "./generated/${specClassName}.js";
+
+/** @lynxnativemodule name:${className} */
+export class ${className} extends ${specClassName} {
+${methods
+  .map((m) => {
+    const params = m.params
+      .map((p) => {
+        return `${p.paramName}${p.isOptional ? "?" : ""}: ${p.typeText}`;
+      })
+      .join(", ");
+
+    return `  ${m.name}(${params}): ${m.returnType} {
+    // TODO: Implement your web logic here
+    ${m.returnType !== "void" ? 'throw new Error("Not implemented");' : ""}
+  }`;
+  })
+  .join("\n\n")}
+}`;
+
+    fs.writeFileSync(webImplFile, webImplContent);
+    console.log(`  ✅ Generated Web Module implementation template: ${className}.ts`);
   }
 }
 

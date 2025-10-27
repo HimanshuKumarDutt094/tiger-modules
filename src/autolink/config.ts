@@ -14,23 +14,11 @@ export interface NativeModuleConfig {
 }
 
 /**
- * Custom Android view configuration for elements
- */
-export interface CustomViewConfig {
-  /** Name of the Android view type (must match a key from ANDROID_VIEW_TYPES registry or be a full class name) */
-  name: string;
-  /** Full package name (optional, will be derived from name if it's a full class name) */
-  package?: string;
-}
-
-/**
- * Element configuration with optional custom Android view
+ * Element configuration (simplified to only require name)
  */
 export interface ElementConfig {
   /** Element name */
   name: string;
-  /** Optional custom Android view configuration */
-  customView?: CustomViewConfig;
 }
 
 /**
@@ -159,19 +147,9 @@ export type AutolinkConfig = LynxExtConfig;
  *     { name: 'MyModule', className: 'MyModuleImpl' }
  *   ],
  *   elements: [
- *     { name: 'BasicElement' },  // Uses default View
- *     {
- *       name: 'ExplorerInput',
- *       customView: {
- *         name: 'AppCompatEditText'  // Short name from built-in registry
- *       }
- *     },
- *     {
- *       name: 'CustomButton',
- *       customView: {
- *         name: 'com.mycompany.CustomButton'  // Custom full class name
- *       }
- *     }
+ *     { name: 'BasicElement' },
+ *     { name: 'ExplorerInput' },
+ *     { name: 'CustomButton' }
  *   ]
  * });
  * ```

@@ -23,19 +23,10 @@ export interface PropertyInfo {
   typeText: string;
 }
 
-// Android view type configuration
-export interface AndroidViewTypeConfig {
-  viewType: string;           // Full class name (e.g., "androidx.appcompat.widget.AppCompatEditText")
-  shortName: string;          // Short name for imports (e.g., "AppCompatEditText")
-  packageName: string;        // Package for import (e.g., "androidx.appcompat.widget")
-  isValidated: boolean;       // Whether the type has been validated
-}
-
-// Element information including properties and Android view type
+// Element information including properties (simplified - no custom view types)
 export interface ElementInfo {
   name: string;
   properties: PropertyInfo[];
-  androidViewType?: AndroidViewTypeConfig;
 }
 
 // Code generation context

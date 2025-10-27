@@ -2,8 +2,8 @@
 import { spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
-import { generateGlobalDts } from "./generate-types";
-import { loadConfig } from "./autolink/config-loader.js";
+import { generateGlobalDts } from "../utils/type-generator.js";
+import { loadConfig } from "../autolink/config-loader.js";
 
 async function copyDir(src: string, dest: string) {
   // Check if source exists
@@ -324,6 +324,28 @@ async function writeDistPackageJson(moduleDir: string, distDir: string) {
   }
 }
 
+export async function runBuild(): Promise<void> {
+  await buildModule();
+}
+
+export async function runBuildWithActions(): Promise<void> {
+  const { ActionRunner } = await import("../core/actions/action-runner.js");
+  const { BuildAction } = await import("../core/actions/build-action.js");
+  const { defaultLogger } = await import("../core/logger.js");
+  
+  const action = new BuildAction();
+  const context = {
+    devMode: false,
+    environment: 'development' as const,
+    logger: defaultLogger,
+    projectRoot: process.cwd(),
+  };
+  
+  const runner = new ActionRunner(context);
+  runner.addAction(action);
+  await runner.run();
+}
+
 export default async function buildModule() {
   const moduleDir = process.cwd();
   const distDir = path.join(moduleDir, "dist");
@@ -441,7 +463,7 @@ if (typeof process !== "undefined") {
       process.argv && process.argv[1] ? path.resolve(process.argv[1]) : null;
     const here = path.resolve(new URL(import.meta.url).pathname);
     if (entry && entry === here) {
-      buildModule().catch((err) => {
+      runBuildWithActions().catch((err) => {
         console.error(err);
         process.exit(1);
       });

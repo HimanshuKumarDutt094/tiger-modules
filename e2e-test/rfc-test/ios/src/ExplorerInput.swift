@@ -2,50 +2,101 @@ import Foundation
 import UIKit
 
 /**
- * Implementation of ExplorerInput element
- * Extend the generated base class and implement your logic
+ * ExplorerInput element implementation
+ * 
+ * This is a complete, self-contained element class that you can modify directly.
+ * The class extends LynxUI<UIView> and can be discovered by the build system.
+ * 
+ * TODO: Customize this class by:
+ * 1. Implementing the createView() method to return your desired view type
+ * 2. Implementing property setters to update your view
+ * 3. Adding event emission calls where needed
+ * 4. Optionally changing the UIView type to a more specific iOS view
  */
 @objcMembers
-public final class ExplorerInput: ExplorerInputSpec {
+public final class ExplorerInput: LynxUI<UIView> {
 
-    override func createView() -> UIView {
-        // TODO: Create and return your native view
-        // Example: let button = UIButton(); /* setup */; return button
-        return UIView()
+    public override func createView() -> UIView {
+        // TODO: Create and configure your UIView
+        // You can change UIView to any iOS view type (UIButton, UITextField, etc.)
+        let view = UIView()
+        
+        // TODO: Configure your view properties here
+        // Example: view.backgroundColor = UIColor.white
+        // Example: view.layer.cornerRadius = 8
+        
+        return view
     }
 
-    override func setBindinput(_ bindinput: (Any) -> Void?) {
+    @objc func setBindinput(_ bindinput: (Any) -> Void?) {
         // TODO: Update your view with bindinput
-        // Example: view.bindinput = bindinput
+        // Access the native view with: view.bindinput = bindinput
+        // Example implementation:
+        // view.bindinput = bindinput
     }
 
-    override func setClassName(_ className: String?) {
+    @objc func setClassName(_ className: String?) {
         // TODO: Update your view with className
-        // Example: view.className = className
+        // Access the native view with: view.className = className
+        // Example implementation:
+        // view.className = className
     }
 
-    override func setId(_ id: String?) {
+    @objc func setId(_ id: String?) {
         // TODO: Update your view with id
-        // Example: view.id = id
+        // Access the native view with: view.id = id
+        // Example implementation:
+        // view.id = id
     }
 
-    override func setStyle(_ style: Any?) {
+    @objc func setStyle(_ style: Any?) {
         // TODO: Update your view with style
-        // Example: view.style = style
+        // Access the native view with: view.style = style
+        // Example implementation:
+        // view.style = style
     }
 
-    override func setValue(_ value: Any?) {
+    @objc func setValue(_ value: Any?) {
         // TODO: Update your view with value
-        // Example: view.value = value
+        // Access the native view with: view.value = value
+        // Example implementation:
+        // view.value = value
     }
 
-    override func setMaxlines(_ maxlines: Double?) {
+    @objc func setMaxlines(_ maxlines: Double?) {
         // TODO: Update your view with maxlines
-        // Example: view.maxlines = maxlines
+        // Access the native view with: view.maxlines = maxlines
+        // Example implementation:
+        // view.maxlines = maxlines
     }
 
-    override func setPlaceholder(_ placeholder: String?) {
+    @objc func setPlaceholder(_ placeholder: String?) {
         // TODO: Update your view with placeholder
-        // Example: view.placeholder = placeholder
+        // Access the native view with: view.placeholder = placeholder
+        // Example implementation:
+        // view.placeholder = placeholder
     }
+
+    // Helper method for event emission
+    // Call this method to send events back to the JavaScript layer
+    protected func emitEvent(name: String, value: [String: Any]? = nil) {
+        let detail = LynxCustomEvent(sign: getSign(), name: name)
+        if let value = value {
+            for (key, v) in value {
+                detail.addDetail(key, value: v)
+            }
+        }
+        getLynxContext().getEventEmitter().sendCustomEvent(detail)
+    }
+
+    // Example event emission methods (uncomment and modify as needed):
+    /*
+    private func emitClick() {
+        emitEvent(name: "click", value: ["timestamp": Date().timeIntervalSince1970])
+    }
+
+    private func emitChange(newValue: String) {
+        emitEvent(name: "change", value: ["value": newValue])
+    }
+    */
 }

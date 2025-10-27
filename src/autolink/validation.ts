@@ -120,7 +120,7 @@ export function validateAutolinkConfig(config: unknown): ValidationResult {
     }
   }
 
-  // Validate elements - supports both string[] and ElementConfig[]
+  // Validate elements - supports both string[] and simplified ElementConfig[]
   if (cfg.elements !== undefined) {
     if (!Array.isArray(cfg.elements)) {
       errors.push(
@@ -547,7 +547,7 @@ function validateNativeModules(modules: unknown[]): ConfigValidationError[] {
 }
 
 /**
- * Validates elements array (supports both old string[] and new ElementConfig[] formats)
+ * Validates elements array (supports both old string[] and simplified ElementConfig[] formats)
  */
 function validateElements(elements: unknown[]): ConfigValidationError[] {
   const errors: ConfigValidationError[] = [];
@@ -568,7 +568,7 @@ function validateElements(elements: unknown[]): ConfigValidationError[] {
         );
       }
     } else if (typeof element === "object" && element !== null) {
-      // New format: validate ElementConfig structure
+      // Simplified format: validate ElementConfig structure (name only)
       const elementConfig = element as Record<string, unknown>;
 
       if (!elementConfig.name || typeof elementConfig.name !== "string") {
@@ -591,41 +591,7 @@ function validateElements(elements: unknown[]): ConfigValidationError[] {
         );
       }
 
-      // Validate customView if present
-      if (elementConfig.customView !== undefined) {
-        if (typeof elementConfig.customView !== "object" || elementConfig.customView === null) {
-          errors.push(
-            new ConfigValidationError(
-              ConfigErrorType.INVALID_FIELD_TYPE,
-              `elements[${i}].customView`,
-              "customView must be an object",
-            ),
-          );
-        } else {
-          const customView = elementConfig.customView as Record<string, unknown>;
-          
-          if (!customView.name || typeof customView.name !== "string") {
-            errors.push(
-              new ConfigValidationError(
-                ConfigErrorType.MISSING_REQUIRED_FIELD,
-                `elements[${i}].customView.name`,
-                "customView name is required",
-                "Add 'name' field to customView configuration",
-              ),
-            );
-          }
 
-          if (customView.package !== undefined && typeof customView.package !== "string") {
-            errors.push(
-              new ConfigValidationError(
-                ConfigErrorType.INVALID_FIELD_TYPE,
-                `elements[${i}].customView.package`,
-                "customView package must be a string",
-              ),
-            );
-          }
-        }
-      }
     } else {
       errors.push(
         new ConfigValidationError(
