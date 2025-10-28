@@ -3,6 +3,7 @@ import { Command } from "commander";
 import { initModule } from "./commands/create.js";
 import { runCodegen } from "./commands/codegen.js";
 import { runBuildWithActions } from "./commands/build.js";
+import { registerCreateNewCommand } from "./commands/create-new.js";
 
 const program = new Command();
 
@@ -45,6 +46,9 @@ program
   .action(async () => {
     await runBuildWithActions();
   });
+
+// Register create command (follows lepo pattern)
+registerCreateNewCommand(program);
 
 // If no subcommand provided, show help
 if (process.argv.length === 2) {

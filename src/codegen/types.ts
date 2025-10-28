@@ -26,6 +26,7 @@ export interface PropertyInfo {
 // Element information including properties (simplified - no custom view types)
 export interface ElementInfo {
   name: string;
+  tagName?: string;
   properties: PropertyInfo[];
 }
 

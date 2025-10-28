@@ -86,8 +86,13 @@ export async function runCodegenOrchestrator(): Promise<void> {
     const elementInfo = elementInfoMap.get(elementName);
 
     if (elementInfo) {
+      // Add tagName from config to ElementInfo
+      const enhancedElementInfo = {
+        ...elementInfo,
+        tagName: elementConfig.tagName
+      };
       // Use the ElementInfo-based generator
-      generateElement(elementInfo, codegenContext);
+      generateElement(enhancedElementInfo, codegenContext);
     } else {
       console.warn(
         `⚠️  No props interface found for element ${elementName}, creating basic template...`
@@ -96,6 +101,7 @@ export async function runCodegenOrchestrator(): Promise<void> {
       // Create basic ElementInfo for elements without interfaces
       const basicElementInfo = {
         name: elementName,
+        tagName: elementConfig.tagName,
         properties: []
       };
       

@@ -61,30 +61,7 @@ function runTsdown(cwd: string) {
   console.log("tsdown compilation completed successfully");
 }
 
-async function copyGeneratedFolder(moduleDir: string, distDir: string) {
-  const generatedSrc = path.join(moduleDir, "generated");
-  
-  if (fs.existsSync(generatedSrc)) {
-    try {
-      const generatedDest = path.join(distDir, "generated");
-      await copyDir(generatedSrc, generatedDest);
-      console.log("✓ copied generated/ -> dist/generated/");
-      
-      // List copied files for transparency
-      const files = await fs.promises.readdir(generatedSrc);
-      for (const file of files) {
-        console.log(`  • ${file}`);
-      }
-    } catch (err) {
-      console.warn(
-        "⚠️  generated folder copy failed:",
-        err instanceof Error ? err.message : err,
-      );
-    }
-  } else {
-    console.log("ℹ️  No generated/ folder found (run 'tiger-module codegen' to create)");
-  }
-}
+
 
 async function validateExports(moduleDir: string) {
   const indexPath = path.join(moduleDir, "src", "index.ts");
@@ -250,11 +227,6 @@ async function writeDistPackageJson(moduleDir: string, distDir: string) {
     "tiger.config.json", // Always include JSON in dist for runtime
   ];
 
-  // Add generated folder to files array if it exists
-  if (fs.existsSync(path.join(distDir, "generated"))) {
-    baseFiles.push("generated");
-  }
-
   pkg.files = Array.from(new Set([...(pkg.files || []), ...baseFiles]));
 
   // Set correct paths for main/module/types
@@ -277,24 +249,7 @@ async function writeDistPackageJson(moduleDir: string, distDir: string) {
     types: "./global.d.ts",
   };
 
-  // Add generated file exports
-  const generatedDir = path.join(distDir, "generated");
-  if (fs.existsSync(generatedDir)) {
-    try {
-      const generatedFiles = await fs.promises.readdir(generatedDir);
-      
-      // Add pattern export for all generated files
-      pkg.exports["./generated/*"] = "./generated/*";
-      
-      // Add specific exports for each generated file
-      for (const file of generatedFiles) {
-        const name = path.parse(file).name;
-        pkg.exports[`./generated/${name}`] = `./generated/${file}`;
-      }
-    } catch (err) {
-      console.warn("⚠️  Failed to read generated directory for exports:", err instanceof Error ? err.message : err);
-    }
-  }
+  // No generated file exports - everything is in global.d.ts
 
   // Keep package.json export
   pkg.exports["./package.json"] = "./package.json";
@@ -310,18 +265,6 @@ async function writeDistPackageJson(moduleDir: string, distDir: string) {
   console.log("  main:", pkg.main);
   console.log("  types:", pkg.types);
   console.log("  files:", pkg.files.join(", "));
-  
-  // Show generated exports if any
-  if (fs.existsSync(generatedDir)) {
-    try {
-      const generatedFiles = await fs.promises.readdir(generatedDir);
-      if (generatedFiles.length > 0) {
-        console.log("  generated exports:", generatedFiles.map(f => `./generated/${path.parse(f).name}`).join(", "));
-      }
-    } catch (err) {
-      // Ignore read errors for logging
-    }
-  }
 }
 
 export async function runBuild(): Promise<void> {
@@ -369,7 +312,7 @@ export default async function buildModule() {
   // 2. Run tsdown to compile TS -> dist (this clears dist first)
   runTsdown(moduleDir);
 
-  // 3. Generate global.d.ts from TigerModule interface (for TypeScript bindings)
+  // 3. Generate comprehensive global.d.ts for TypeScript bindings (elements and/or services)
   try {
     await generateGlobalDts(path.join(distDir, "global.d.ts"));
     console.log("✓ generated global.d.ts for TypeScript bindings");
@@ -427,8 +370,8 @@ export default async function buildModule() {
     }
   }
 
-  // 7. Copy generated directory to dist (if exists)
-  await copyGeneratedFolder(moduleDir, distDir);
+  // 7. Skip copying generated directory - build process generates comprehensive global.d.ts
+  console.log("ℹ️  Skipping generated/ folder - build generates comprehensive global.d.ts");
 
   // 8. Validate exports and provide guidance
   await validateExports(moduleDir);

@@ -12,3 +12,11 @@ export type {
   WebConfig,
 } from "./autolink/config.js";
 export { defineConfig } from "./autolink/config.js";
+
+// Export plugins
+export { 
+  pluginTigerElementRegistry,
+} from "./autolink/plugins/index.js";
+export type { 
+  TigerElementRegistryOptions,
+} from "./autolink/plugins/index.js";

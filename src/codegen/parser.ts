@@ -154,8 +154,12 @@ export function parseElementInterfaces(
       ? interfaceName.slice(0, -5)
       : interfaceName;
 
+    // Find the corresponding element config to get tagName
+    const elementConfig = elements.find(el => el.name === elementName);
+    
     const elementInfo: ElementInfo = {
       name: elementName,
+      tagName: elementConfig?.tagName,
       properties,
     };
 

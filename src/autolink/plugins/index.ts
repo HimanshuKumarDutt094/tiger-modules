@@ -1,18 +1,9 @@
 /**
- * LynxJS Autolink Build System Plugins
- *
- * This module exports all build system plugins for different platforms:
- * - Gradle plugin for Android
- * - CocoaPods plugin for iOS
- * - Rsbuild plugin for web
+ * Tiger Module Autolink Plugins
+ * 
+ * This module exports all autolink plugins for different platforms
  */
 
-export {
-  CocoaPodsPlugin,
-  type CocoaPodsPluginConfig,
-} from "./cocoapods-plugin.js";
-export {
-  pluginWebPlatform,
-  lynxExtensionPlugin,
-  type RsbuildPluginOptions,
-} from "./rsbuild-plugin.js";
+// Main Tiger Element Registry Plugin (RFC compliant)
+export { pluginTigerElementRegistry } from './tiger-element-registry/index.js';
+export type { TigerElementRegistryOptions } from './tiger-element-registry/types.js';

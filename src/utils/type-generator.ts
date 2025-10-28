@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { Project } from "ts-morph";
+import { Project, SourceFile, InterfaceDeclaration } from "ts-morph";
 import fs from "fs";
 import path from "path";
 import { loadConfig } from "../autolink/config-loader.js";
@@ -10,6 +10,7 @@ async function loadModuleConfig(): Promise<{
   moduleName: string;
   androidPackageName: string;
   srcFile: string;
+  moduleType: "service" | "element" | "mixed";
 }> {
   const { config: autolinkConfig, configFile } = await loadConfig();
   console.log(`✓ Loaded configuration from ${configFile}`);
@@ -18,23 +19,34 @@ async function loadModuleConfig(): Promise<{
     throw new Error(`${configFile} missing platforms.android.packageName`);
   }
 
-  // Extract module info from nativeModules array
-  const firstModule = autolinkConfig.nativeModules?.[0];
-  if (!firstModule) {
-    throw new Error(`${configFile} missing nativeModules array or it's empty`);
-  }
+  const hasNativeModules =
+    autolinkConfig.nativeModules && autolinkConfig.nativeModules.length > 0;
+  const hasElements =
+    autolinkConfig.elements && autolinkConfig.elements.length > 0;
 
   let moduleName: string;
-  if (typeof firstModule === "string") {
-    moduleName = firstModule.replace(/Module$/, "");
+  let moduleType: "service" | "element" | "mixed";
+
+  if (hasNativeModules && hasElements) {
+    moduleType = "mixed";
+    moduleName = autolinkConfig.nativeModules![0].name;
+  } else if (hasNativeModules) {
+    moduleType = "service";
+    moduleName = autolinkConfig.nativeModules![0].name;
+  } else if (hasElements) {
+    moduleType = "element";
+    moduleName = autolinkConfig.elements![0].name;
   } else {
-    moduleName = firstModule.name;
+    throw new Error(
+      `${configFile} must have either nativeModules or elements defined`
+    );
   }
 
   return {
     moduleName,
     androidPackageName: autolinkConfig.platforms.android.packageName,
     srcFile: "./src/module.ts",
+    moduleType,
   };
 }
 
@@ -46,31 +58,39 @@ export async function generateGlobalDts(
   // --- Load TS source ---
   const project = new Project();
   const srcPath = path.resolve(config.srcFile);
-  const sourceFile = project.addSourceFileAtPath(srcPath);
 
-  const interfaceDecl = sourceFile
-    .getInterfaces()
-    .find((i) => i.getExtends().some((e) => e.getText() === "TigerModule"));
+  let sourceFile: SourceFile | undefined;
+  let interfaceDecl: InterfaceDeclaration | undefined;
+  let methods: any[] = [];
 
-  if (!interfaceDecl) {
-    console.warn(
-      "No interface extending TigerModule found, skipping global.d.ts generation"
-    );
-    return;
+  // Load source file if it exists (for both services and elements)
+  if (fs.existsSync(srcPath)) {
+    sourceFile = project.addSourceFileAtPath(srcPath);
+
+    // For service modules, look for TigerModule interface
+    if (config.moduleType === "service" || config.moduleType === "mixed") {
+      interfaceDecl = sourceFile
+        .getInterfaces()
+        .find((i) => i.getExtends().some((e) => e.getText() === "TigerModule"));
+
+      if (interfaceDecl) {
+        methods = interfaceDecl.getMethods().map((m) => {
+          const name = m.getName();
+          const params = m.getParameters().map((p) => {
+            const paramName = p.getName();
+            const isOptional = p.isOptional();
+            const typeNode = p.getTypeNode();
+            const typeText = typeNode
+              ? typeNode.getText()
+              : p.getType().getText();
+            return { paramName, isOptional, typeText };
+          });
+          const returnType = m.getReturnType().getText() || "void";
+          return { name, params, returnType };
+        });
+      }
+    }
   }
-
-  const methods = interfaceDecl.getMethods().map((m) => {
-    const name = m.getName();
-    const params = m.getParameters().map((p) => {
-      const paramName = p.getName();
-      const isOptional = p.isOptional();
-      const typeNode = p.getTypeNode();
-      const typeText = typeNode ? typeNode.getText() : p.getType().getText();
-      return { paramName, isOptional, typeText };
-    });
-    const returnType = m.getReturnType().getText() || "void";
-    return { name, params, returnType };
-  });
 
   // --- Load autolink config to get elements and modules ---
   const { config: autolinkConfig } = await loadConfig();
@@ -96,10 +116,10 @@ export async function generateGlobalDts(
     dtsContent += `  interface NativeModules {\n`;
 
     autolinkConfig.nativeModules!.forEach((moduleConfig) => {
-      const moduleName =
-        typeof moduleConfig === "string" ? moduleConfig : moduleConfig.name;
+      const moduleName = moduleConfig.name;
 
       if (
+        interfaceDecl &&
         interfaceDecl.getName().toLowerCase().includes(moduleName.toLowerCase())
       ) {
         // This is the main module interface
@@ -132,23 +152,24 @@ export async function generateGlobalDts(
     dtsContent += `  interface IntrinsicElements extends LynxIntrinsicElements {\n`;
 
     autolinkConfig.elements!.forEach((elementConfig) => {
-      const elementName =
-        typeof elementConfig === "string" ? elementConfig : elementConfig.name;
-      // Convert PascalCase to kebab-case for tag name (ExplorerInput -> explorer-input)
-      const tagName = elementName
-        .replace(/([a-z])([A-Z])/g, "$1-$2")
-        .toLowerCase();
+      const elementName = elementConfig.name;
+      // Use tagName from config if available, otherwise convert PascalCase to kebab-case
+      const tagName =
+        elementConfig.tagName ||
+        elementName.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
 
       // Look for element props interface in the source file
       const elementPropsInterface = sourceFile
-        .getInterfaces()
-        .find((i) => i.getName() === `${elementName}Props`);
+        ?.getInterfaces()
+        .find(
+          (i: InterfaceDeclaration) => i.getName() === `${elementName}Props`
+        );
 
       dtsContent += `    "${tagName}": {\n`;
 
       if (elementPropsInterface) {
-        // Generate props from the interface
-        const props = elementPropsInterface.getProperties().map((prop) => {
+        // Generate props from the interface - ONLY the exact props defined
+        const props = elementPropsInterface.getProperties().map((prop: any) => {
           const name = prop.getName();
           const isOptional = prop.hasQuestionToken();
           const typeNode = prop.getTypeNode();
@@ -159,14 +180,8 @@ export async function generateGlobalDts(
         });
         dtsContent += props.join("\n");
       } else {
-        // Fallback to common element props
-        dtsContent += `      bindinput?: (e: BaseEvent<"input", { value: string }>) => void;\n`;
-        dtsContent += `      className?: string;\n`;
-        dtsContent += `      id?: string;\n`;
-        dtsContent += `      style?: string | CSSProperties;\n`;
-        dtsContent += `      value?: string | undefined;\n`;
-        dtsContent += `      maxlines?: number;\n`;
-        dtsContent += `      placeholder?: string;`;
+        // No props interface found - element has no props
+        dtsContent += `      // No props defined for this element`;
       }
 
       dtsContent += `\n    };\n`;
@@ -184,7 +199,7 @@ export async function generateGlobalDts(
   if (autolinkConfig.nativeModules?.length) {
     console.log(
       `   📦 Native modules: ${autolinkConfig.nativeModules
-        .map((m) => (typeof m === "string" ? m : m.name))
+        .map((m) => m.name)
         .join(", ")}`
     );
   }
@@ -192,10 +207,11 @@ export async function generateGlobalDts(
   if (autolinkConfig.elements?.length) {
     console.log(
       `   🎨 Elements: ${autolinkConfig.elements
-        .map((e) => {
-          const name = typeof e === "string" ? e : e.name;
-          return name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
-        })
+        .map(
+          (e) =>
+            e.tagName ||
+            e.name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
+        )
         .join(", ")}`
     );
   }

@@ -9,8 +9,7 @@
     "tiger": "./bin/run.js"
   },
   "files": [
-    "dist",
-    "templates"
+    "dist"
   ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -20,11 +19,12 @@
     "./codegen": "./dist/codegen.js",
     "./config": "./dist/config.js",
     "./config-loader": "./dist/config-loader.js",
+    "./plugin": "./dist/plugin.js",
     "./runtime": "./dist/runtime.js",
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "tsdown",
+    "build": "tsdown && cp -r templates dist/",
     "prepare": "npm run build",
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit",

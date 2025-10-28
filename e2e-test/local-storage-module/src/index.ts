@@ -1,1 +1,0 @@
-export { NativeLocalStorage } from "./module";

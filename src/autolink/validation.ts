@@ -4,7 +4,7 @@
  */
 
 import type {
-  AutolinkConfig,
+  LynxExtConfig,
   AndroidConfig,
   IOSConfig,
   WebConfig,
@@ -32,7 +32,7 @@ export function validateAutolinkConfig(config: unknown): ValidationResult {
     return { valid: false, errors, warnings };
   }
 
-  const cfg = config as Partial<AutolinkConfig>;
+  const cfg = config as Partial<LynxExtConfig>;
 
   // Validate required fields
   validateRequiredField(cfg, "name", "string", errors);
@@ -148,7 +148,7 @@ export function validateAutolinkConfig(config: unknown): ValidationResult {
  * Validates platform configurations
  */
 function validatePlatforms(
-  platforms: AutolinkConfig["platforms"],
+  platforms: LynxExtConfig["platforms"],
 ): ConfigValidationError[] {
   const errors: ConfigValidationError[] = [];
 
@@ -369,8 +369,8 @@ function validateWebConfig(config: unknown): ConfigValidationError[] {
  * Helper: Validates a required field exists and has correct type
  */
 function validateRequiredField(
-  config: Partial<AutolinkConfig>,
-  field: keyof AutolinkConfig,
+  config: Partial<LynxExtConfig>,
+  field: keyof LynxExtConfig,
   expectedType: string,
   errors: ConfigValidationError[],
 ): void {
@@ -399,8 +399,8 @@ function validateRequiredField(
  * Helper: Validates an optional array field
  */
 function validateOptionalArrayField(
-  config: Partial<AutolinkConfig>,
-  field: keyof AutolinkConfig,
+  config: Partial<LynxExtConfig>,
+  field: keyof LynxExtConfig,
   itemType: string,
   errors: ConfigValidationError[],
   warnings: string[],
@@ -483,19 +483,7 @@ function validateNativeModules(modules: unknown[]): ConfigValidationError[] {
   for (let i = 0; i < modules.length; i++) {
     const module = modules[i];
 
-    if (typeof module === "string") {
-      // Old format: validate as class name
-      if (!isValidClassName(module)) {
-        errors.push(
-          new ConfigValidationError(
-            ConfigErrorType.INVALID_FIELD_VALUE,
-            `nativeModules[${i}]`,
-            `Invalid class name: ${module}`,
-            "Class names must start with uppercase letter and contain only letters, digits, and underscores",
-          ),
-        );
-      }
-    } else if (typeof module === "object" && module !== null) {
+    if (typeof module === "object" && module !== null) {
       // New format: validate NativeModuleConfig structure
       const moduleConfig = module as Record<string, unknown>;
 
@@ -537,7 +525,7 @@ function validateNativeModules(modules: unknown[]): ConfigValidationError[] {
         new ConfigValidationError(
           ConfigErrorType.INVALID_FIELD_TYPE,
           `nativeModules[${i}]`,
-          "Module must be either a string or an object",
+          "Module must be an object with name and className",
         ),
       );
     }
@@ -555,19 +543,7 @@ function validateElements(elements: unknown[]): ConfigValidationError[] {
   for (let i = 0; i < elements.length; i++) {
     const element = elements[i];
 
-    if (typeof element === "string") {
-      // Old format: validate as element name
-      if (!isValidElementName(element)) {
-        errors.push(
-          new ConfigValidationError(
-            ConfigErrorType.INVALID_FIELD_VALUE,
-            `elements[${i}]`,
-            `Invalid element name: ${element}`,
-            "Element names must start with uppercase letter and contain only letters and digits",
-          ),
-        );
-      }
-    } else if (typeof element === "object" && element !== null) {
+    if (typeof element === "object" && element !== null) {
       // Simplified format: validate ElementConfig structure (name only)
       const elementConfig = element as Record<string, unknown>;
 
@@ -591,13 +567,35 @@ function validateElements(elements: unknown[]): ConfigValidationError[] {
         );
       }
 
+      // Validate optional tagName field
+      if (elementConfig.tagName !== undefined) {
+        if (typeof elementConfig.tagName !== "string") {
+          errors.push(
+            new ConfigValidationError(
+              ConfigErrorType.INVALID_FIELD_TYPE,
+              `elements[${i}].tagName`,
+              "tagName must be a string",
+            ),
+          );
+        } else if (!isValidTagName(elementConfig.tagName as string)) {
+          errors.push(
+            new ConfigValidationError(
+              ConfigErrorType.INVALID_FIELD_VALUE,
+              `elements[${i}].tagName`,
+              `Invalid tag name: ${elementConfig.tagName}`,
+              "Tag names must be lowercase and can contain letters, numbers, and hyphens",
+            ),
+          );
+        }
+      }
+
 
     } else {
       errors.push(
         new ConfigValidationError(
           ConfigErrorType.INVALID_FIELD_TYPE,
           `elements[${i}]`,
-          "Element must be either a string or an object",
+          "Element must be an object with name and optional tagName",
         ),
       );
     }
@@ -613,4 +611,14 @@ function isValidElementName(name: string): boolean {
   // Element names should start with uppercase letter and contain only letters and digits
   const pattern = /^[A-Z][a-zA-Z0-9]*$/;
   return pattern.test(name);
+}
+
+/**
+ * Validates HTML tag name format
+ */
+function isValidTagName(tagName: string): boolean {
+  // Tag names should be lowercase and can contain letters, numbers, and hyphens
+  // Must start with a letter and not end with a hyphen
+  const pattern = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
+  return pattern.test(tagName);
 }

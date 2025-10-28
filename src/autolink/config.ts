@@ -14,11 +14,13 @@ export interface NativeModuleConfig {
 }
 
 /**
- * Element configuration (simplified to only require name)
+ * Element configuration with support for custom tag names
  */
 export interface ElementConfig {
-  /** Element name */
+  /** Class name of the element (e.g., "LynxWebView") */
   name: string;
+  /** HTML tag name for the element (e.g., "web-view"). If not provided, defaults to kebab-case of name */
+  tagName?: string;
 }
 
 /**
@@ -120,11 +122,6 @@ export interface ValidationResult {
   warnings: string[];
 }
 
-/**
- * Legacy alias for backward compatibility
- * @deprecated Use LynxExtConfig instead
- */
-export type AutolinkConfig = LynxExtConfig;
 
 /**
  * Helper function to define Lynx extension configuration with type safety
@@ -148,8 +145,8 @@ export type AutolinkConfig = LynxExtConfig;
  *   ],
  *   elements: [
  *     { name: 'BasicElement' },
- *     { name: 'ExplorerInput' },
- *     { name: 'CustomButton' }
+ *     { name: 'ExplorerInput', tagName: 'explorer-input' },
+ *     { name: 'CustomButton', tagName: 'custom-btn' }
  *   ]
  * });
  * ```

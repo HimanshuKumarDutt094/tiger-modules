@@ -24,39 +24,44 @@ export function generateElement(
 ): void {
   // Handle both old and new function signatures for backward compatibility
   let elementName: string;
+  let tagName: string;
   let properties: PropertyInfo[] | undefined;
   let actualContext: CodegenContext;
 
-  if (typeof elementNameOrInfo === 'string') {
+  if (typeof elementNameOrInfo === "string") {
     // Old signature: generateElement(elementName, properties, context)
     elementName = elementNameOrInfo;
+    tagName = elementNameOrInfo.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
     properties = propertiesOrContext as PropertyInfo[] | undefined;
     actualContext = context!;
   } else {
     // New signature: generateElement(elementInfo, context)
     const elementInfo = elementNameOrInfo;
     elementName = elementInfo.name;
+    tagName = elementInfo.tagName || elementInfo.name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
     properties = elementInfo.properties;
     actualContext = propertiesOrContext as CodegenContext;
   }
-  
+
   // Validate that we have a valid context
   if (!actualContext) {
-    throw new Error(`generateElement: context is undefined for element ${elementName}`);
+    throw new Error(
+      `generateElement: context is undefined for element ${elementName}`
+    );
   }
   console.log(`🔨 Generating Element: ${elementName}...`);
 
   // Generate Android LynxUI Element
-  generateAndroidElement(elementName, properties, actualContext);
+  generateAndroidElement(elementName, tagName, properties, actualContext);
 
   // Generate iOS LynxUI Element
-  generateIOSElement(elementName, properties, actualContext);
+  generateIOSElement(elementName, tagName, properties, actualContext);
 
   // Generate Web Element
-  generateWebElement(elementName, properties, actualContext);
+  generateWebElement(elementName, tagName, properties, actualContext);
 
-  // Generate TypeScript module augmentation for IntrinsicElements
-  generateTypeScriptModuleAugmentation(elementName, properties);
+  // Skip TypeScript generation - build process handles comprehensive global.d.ts
+  console.log("  ℹ️  Skipping TypeScript generation - build process handles global.d.ts");
 
   console.log(
     `  ✅ Generated LynxUI element: ${elementName} for all platforms`
@@ -65,6 +70,7 @@ export function generateElement(
 
 function generateAndroidElement(
   elementName: string,
+  tagName: string,
   properties: PropertyInfo[] | undefined,
   context: CodegenContext
 ): void {
@@ -87,6 +93,7 @@ function generateAndroidElement(
     generateCompleteKotlinElement(
       androidElementFile,
       elementName,
+      tagName,
       properties,
       androidPackageName
     );
@@ -94,6 +101,7 @@ function generateAndroidElement(
     generateCompleteJavaElement(
       androidElementFile,
       elementName,
+      tagName,
       properties,
       androidPackageName
     );
@@ -103,9 +111,16 @@ function generateAndroidElement(
 function generateCompleteKotlinElement(
   elementFile: string,
   elementName: string,
+  tagName: string,
   properties: PropertyInfo[] | undefined,
   packageName: string
 ): void {
+  // Check if file already exists - if so, skip generation to preserve manual changes
+  if (fs.existsSync(elementFile)) {
+    console.log(`  ⚠️  Kotlin element ${elementName} already exists, skipping generation to preserve manual changes`);
+    return;
+  }
+
   const props = properties || [];
 
   // Use standard View as default base type (no custom view type configuration)
@@ -113,12 +128,14 @@ function generateCompleteKotlinElement(
   const viewTypeImport = "import android.view.View";
 
   // Check if we need to import Callback
-  const needsCallbackImport = props.some(prop => {
+  const needsCallbackImport = props.some((prop) => {
     const kotlinType = convertType(prop.typeText, "kotlin");
     return kotlinType.includes("Callback");
   });
 
-  const callbackImport = needsCallbackImport ? "import com.lynx.react.bridge.Callback" : "";
+  const callbackImport = needsCallbackImport
+    ? "import com.lynx.react.bridge.Callback"
+    : "";
 
   const propMethods = props
     .map((prop) => {
@@ -160,7 +177,7 @@ ${callbackImport}
  * 3. Adding event emission calls where needed
  * 4. Optionally changing the View type to a more specific Android view
  */
-@LynxElement(name = "${elementName.toLowerCase()}")
+@LynxElement(name = "${tagName}")
 class ${elementName}(context: LynxContext) : LynxUI<${viewType}>(context) {
 
   override fun createView(context: Context): ${viewType} {
@@ -204,9 +221,16 @@ ${propMethods || "  // No properties defined"}
 function generateCompleteJavaElement(
   elementFile: string,
   elementName: string,
+  tagName: string,
   properties: PropertyInfo[] | undefined,
   packageName: string
 ): void {
+  // Check if file already exists - if so, skip generation to preserve manual changes
+  if (fs.existsSync(elementFile)) {
+    console.log(`  ⚠️  Java element ${elementName} already exists, skipping generation to preserve manual changes`);
+    return;
+  }
+
   const props = properties || [];
 
   // Use standard View as default base type (no custom view type configuration)
@@ -214,12 +238,14 @@ function generateCompleteJavaElement(
   const viewTypeImport = "import android.view.View;";
 
   // Check if we need to import Callback
-  const needsCallbackImport = props.some(prop => {
+  const needsCallbackImport = props.some((prop) => {
     const javaType = convertType(prop.typeText, "java");
     return javaType.includes("Callback");
   });
 
-  const callbackImport = needsCallbackImport ? "import com.lynx.react.bridge.Callback;" : "";
+  const callbackImport = needsCallbackImport
+    ? "import com.lynx.react.bridge.Callback;"
+    : "";
 
   const propMethods = props
     .map((prop) => {
@@ -260,7 +286,7 @@ import java.util.HashMap;
  * 3. Adding event emission calls where needed
  * 4. Optionally changing the View type to a more specific Android view
  */
-@LynxElement(name = "${elementName.toLowerCase()}")
+@LynxElement(name = "${tagName}")
 public class ${elementName} extends LynxUI<${viewType}> {
   
   public ${elementName}(LynxContext context) {
@@ -319,22 +345,21 @@ ${propMethods || "  // No properties defined"}
   console.log(`  ✅ Generated complete Java element: ${elementName}.java`);
 }
 
-
-
-
-
-
-
-
-
 function generateIOSElement(
   elementName: string,
+  tagName: string,
   properties: PropertyInfo[] | undefined,
   context: CodegenContext
 ): void {
   // Generate complete iOS Swift element class directly (no spec file)
   const swiftElementFile = path.join("./ios/src", `${elementName}.swift`);
   fs.mkdirSync(path.dirname(swiftElementFile), { recursive: true });
+
+  // Check if file already exists - if so, skip generation to preserve manual changes
+  if (fs.existsSync(swiftElementFile)) {
+    console.log(`  ⚠️  iOS element ${elementName} already exists, skipping generation to preserve manual changes`);
+    return;
+  }
 
   const props = properties || [];
   const propMethods = props
@@ -416,6 +441,7 @@ ${propMethods || "    // No properties defined"}
 
 function generateWebElement(
   elementName: string,
+  tagName: string,
   properties: PropertyInfo[] | undefined,
   context: CodegenContext
 ): void {
@@ -423,17 +449,23 @@ function generateWebElement(
   const webElementFile = path.join("./web/src", `${elementName}.ts`);
   fs.mkdirSync(path.dirname(webElementFile), { recursive: true });
 
+  // Check if file already exists - if so, skip generation to preserve manual changes
+  if (fs.existsSync(webElementFile)) {
+    console.log(`  ⚠️  Web element ${elementName} already exists, skipping generation to preserve manual changes`);
+    return;
+  }
+
   const props = properties || [];
-  
+
   // Convert Lynx types to appropriate web types
   const convertToWebType = (typeText: string): string => {
     // Replace BaseEvent with standard Event types
-    if (typeText.includes('BaseEvent')) {
-      return typeText.replace(/BaseEvent<[^>]+>/g, 'Event');
+    if (typeText.includes("BaseEvent")) {
+      return typeText.replace(/BaseEvent<[^>]+>/g, "Event");
     }
     // Replace CSSProperties with CSSStyleDeclaration or string
-    if (typeText.includes('CSSProperties')) {
-      return typeText.replace(/CSSProperties/g, 'CSSStyleDeclaration');
+    if (typeText.includes("CSSProperties")) {
+      return typeText.replace(/CSSProperties/g, "CSSStyleDeclaration");
     }
     return typeText;
   };
@@ -452,18 +484,7 @@ function generateWebElement(
     })
     .join("\n\n");
 
-  const webElementContent = `/**
- * ${elementName} element implementation
- * 
- * This is a complete, self-contained element class that you can modify directly.
- * The class extends HTMLElement and can be discovered by the build system.
- * 
- * TODO: Customize this class by:
- * 1. Implementing property setters to update your element
- * 2. Adding event emission calls where needed
- * 3. Implementing lifecycle methods (connectedCallback, disconnectedCallback)
- * 4. Optionally using Shadow DOM for encapsulation
- */
+  const webElementContent = `/** @lynxelement name:${tagName} */
 export class ${elementName} extends HTMLElement {
   
   constructor() {
@@ -519,95 +540,17 @@ ${propMethods || "  // No properties defined"}
   */
 }
 
-// Register the custom element
-customElements.define('${elementName.toLowerCase()}', ${elementName});`;
+// Note: No customElements.define() needed!
+// The @lynxelement annotation tells the Rsbuild plugin to auto-register
+// this element during compilation via the autolink system.
+`;
 
   fs.writeFileSync(webElementFile, webElementContent);
   console.log(`  ✅ Generated complete Web element: ${elementName}.ts`);
 }
 
-function generateTypeScriptModuleAugmentation(
-  elementName: string,
-  properties: PropertyInfo[] | undefined
-): void {
-  // Generate TypeScript module augmentation for IntrinsicElements
-  const rootGeneratedDir = path.join("./generated");
-  fs.mkdirSync(rootGeneratedDir, { recursive: true });
 
-  const rootGeneratedFile = path.join(rootGeneratedDir, `${elementName}.d.ts`);
-  const props = properties || [];
-
-  // Detect required imports from property types
-  const requiredImports = new Set<string>();
-  const allTypeText = props.map(prop => prop.typeText).join(' ');
-  
-  if (allTypeText.includes('BaseEvent')) {
-    requiredImports.add('BaseEvent');
-  }
-  if (allTypeText.includes('CSSProperties')) {
-    requiredImports.add('CSSProperties');
-  }
-
-  // Generate import statement if needed
-  const importStatement = requiredImports.size > 0 
-    ? `import type { ${Array.from(requiredImports).join(', ')} } from "@lynx-js/types";\n`
-    : '';
-
-  // Common properties that should not be duplicated
-  const commonProps = new Set(['className', 'id', 'style']);
-  
-  // Filter out common properties from the interface properties to avoid duplication
-  const filteredProps = props.filter(prop => !commonProps.has(prop.name));
-
-  // Generate properties interface
-  const propsInterface = filteredProps.length > 0
-    ? filteredProps
-        .map(
-          (prop) =>
-            `      ${prop.name}${prop.isOptional ? "?" : ""}: ${
-              prop.typeText
-            };`
-        )
-        .join("\n")
-    : "      // No custom props defined";
-
-  const moduleAugmentation = `/**
- * Generated TypeScript module augmentation for ${elementName} element
- * DO NOT EDIT - This file is auto-generated
- */
-
-${importStatement}import * as Lynx from "@lynx-js/types";
-
-declare module "@lynx-js/types" {
-  interface IntrinsicElements extends Lynx.IntrinsicElements {
-    "${elementName.toLowerCase()}": {
-${propsInterface}
-      className?: string;
-      id?: string;
-      style?: string | Lynx.CSSProperties;
-    };
-  }
-}
-
-// Export element interface for direct usage
-export interface ${elementName}Props {
-${filteredProps
-  .map(
-    (prop) => `  ${prop.name}${prop.isOptional ? "?" : ""}: ${prop.typeText};`
-  )
-  .join("\n")}
-  className?: string;
-  id?: string;
-  style?: string | Lynx.CSSProperties;
-}`;
-
-  fs.writeFileSync(rootGeneratedFile, moduleAugmentation);
-}
 
 function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
-
-
-
-
