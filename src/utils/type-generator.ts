@@ -95,36 +95,104 @@ export async function generateGlobalDts(
   // --- Load autolink config to get elements and modules ---
   const { config: autolinkConfig } = await loadConfig();
 
+  // --- Detect and preserve original import style from source ---
+  let lynxImportStyle = "namespace"; // default to namespace import
+  let lynxImportAlias = "Lynx"; // default alias
+
+  if (sourceFile) {
+    const imports = sourceFile.getImportDeclarations();
+    const lynxImport = imports.find((imp) =>
+      imp.getModuleSpecifierValue().includes("@lynx-js/types")
+    );
+
+    if (lynxImport) {
+      const namespaceImport = lynxImport.getNamespaceImport();
+      if (namespaceImport) {
+        lynxImportStyle = "namespace";
+        lynxImportAlias = namespaceImport.getText();
+      } else {
+        // Check if it's a named import
+        const namedImports = lynxImport.getNamedImports();
+        if (namedImports.length > 0) {
+          lynxImportStyle = "named";
+        }
+      }
+    }
+  }
+
   // --- Generate d.ts content ---
-  let dtsContent = `/// <reference types="@lynx-js/types" />\nimport { BaseEvent, CSSProperties } from "@lynx-js/types";\n`;
+  let dtsContent = `/// <reference types="@lynx-js/types" />\n`;
+
+  // Use the detected import style
+  if (lynxImportStyle === "namespace") {
+    dtsContent += `import type * as ${lynxImportAlias} from "@lynx-js/types";\n`;
+  } else {
+    // Fallback to named imports if that's what was used
+    dtsContent += `import type { BaseEvent, CSSProperties } from "@lynx-js/types";\n`;
+  }
 
   // Add IntrinsicElements import only if we have elements
   const hasElements =
     autolinkConfig.elements && autolinkConfig.elements.length > 0;
   if (hasElements) {
-    dtsContent += `import { IntrinsicElements as LynxIntrinsicElements } from "@lynx-js/types";\n`;
+    dtsContent += `import type { IntrinsicElements as LynxIntrinsicElements } from "@lynx-js/types";\n`;
   }
 
   dtsContent += `\n`;
 
   dtsContent += `declare global {\n`;
 
+  // Auto-discover native modules from source file (interfaces extending TigerModule)
+  const discoveredModules: Array<{ name: string; methods: any[] }> = [];
+
+  if (sourceFile) {
+    const tigerModuleInterfaces = sourceFile
+      .getInterfaces()
+      .filter((i) => i.getExtends().some((e) => e.getText() === "TigerModule"));
+
+    tigerModuleInterfaces.forEach((iface) => {
+      const moduleName = iface.getName(); // Use the exact interface name as module name
+      const moduleMethods = iface.getMethods().map((m) => {
+        const name = m.getName();
+        const params = m.getParameters().map((p) => {
+          const paramName = p.getName();
+          const isOptional = p.isOptional();
+          const typeNode = p.getTypeNode();
+          const typeText = typeNode
+            ? typeNode.getText()
+            : p.getType().getText();
+          return { paramName, isOptional, typeText };
+        });
+        const returnType = m.getReturnType().getText() || "void";
+        return { name, params, returnType };
+      });
+
+      discoveredModules.push({ name: moduleName, methods: moduleMethods });
+    });
+  }
+
+  // Merge config modules with discovered modules
+  const configModules = autolinkConfig.nativeModules || [];
+  const allModuleNames = new Set([
+    ...configModules.map((m) => m.name),
+    ...discoveredModules.map((m) => m.name),
+  ]);
+
   // Generate native modules declarations
-  const hasModules =
-    autolinkConfig.nativeModules && autolinkConfig.nativeModules.length > 0;
+  const hasModules = allModuleNames.size > 0;
   if (hasModules) {
     dtsContent += `  interface NativeModules {\n`;
 
-    autolinkConfig.nativeModules!.forEach((moduleConfig) => {
-      const moduleName = moduleConfig.name;
+    allModuleNames.forEach((moduleName) => {
+      // Find the discovered module with methods
+      const discoveredModule = discoveredModules.find(
+        (m) => m.name === moduleName
+      );
 
-      if (
-        interfaceDecl &&
-        interfaceDecl.getName().toLowerCase().includes(moduleName.toLowerCase())
-      ) {
-        // This is the main module interface
+      if (discoveredModule && discoveredModule.methods.length > 0) {
+        // Use discovered methods from source
         dtsContent += `    ${moduleName}: {\n`;
-        dtsContent += methods
+        dtsContent += discoveredModule.methods
           .map((m) => {
             const params = m.params
               .map(
@@ -137,7 +205,7 @@ export async function generateGlobalDts(
           .join("\n");
         dtsContent += `\n    };\n`;
       } else {
-        // Other modules - generate placeholder
+        // Module in config but no interface found - generate placeholder
         dtsContent += `    ${moduleName}: {\n      // Add method signatures here\n    };\n`;
       }
     });
@@ -168,14 +236,18 @@ export async function generateGlobalDts(
       dtsContent += `    "${tagName}": {\n`;
 
       if (elementPropsInterface) {
-        // Generate props from the interface - ONLY the exact props defined
+        // Generate props from the interface - preserve original type references
         const props = elementPropsInterface.getProperties().map((prop: any) => {
           const name = prop.getName();
           const isOptional = prop.hasQuestionToken();
           const typeNode = prop.getTypeNode();
-          const typeText = typeNode
+          let typeText = typeNode
             ? typeNode.getText()
             : prop.getType().getText();
+
+          // If using namespace import style, preserve the namespace prefix
+          // No need to transform - just use the original type text as-is
+
           return `      ${name}${isOptional ? "?" : ""}: ${typeText};`;
         });
         dtsContent += props.join("\n");

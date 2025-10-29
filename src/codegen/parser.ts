@@ -12,7 +12,7 @@ import type {
   InterfaceMethodsMap,
   ElementInfo,
 } from "./types.js";
-import type { ElementConfig } from "../autolink/config.js";
+import type { ElementConfig, NativeModuleConfig } from "../autolink/config.js";
 
 export function parseInterfaces(
   srcFile: string,
@@ -168,4 +168,48 @@ export function parseElementInterfaces(
   });
 
   return elementInfoMap;
+}
+
+/**
+ * Auto-discovers native modules from TypeScript source file
+ * Looks for interfaces that extend TigerModule
+ * @param srcFile - Path to the TypeScript source file
+ * @returns Array of discovered NativeModuleConfig objects
+ */
+export function discoverNativeModules(srcFile: string): NativeModuleConfig[] {
+  console.log(`🔍 Auto-discovering native modules from ${srcFile}...`);
+  
+  const project = new Project();
+  const srcPath = path.resolve(srcFile);
+  const sourceFile = project.addSourceFileAtPath(srcPath);
+
+  const allInterfaces = sourceFile.getInterfaces();
+  const moduleInterfaces = allInterfaces.filter((i) =>
+    i.getExtends().some((e) => e.getText() === "TigerModule")
+  );
+
+  const discoveredModules: NativeModuleConfig[] = moduleInterfaces.map((interfaceDecl) => {
+    const interfaceName = interfaceDecl.getName();
+    
+    // The interface name is the className (e.g., "NativeLocalStorageModule")
+    // The registration name is typically the same, but can be overridden by @LynxNativeModule annotation
+    // For now, we use the interface name as both name and className
+    // The Gradle plugin will read the actual @LynxNativeModule annotation for the final registration
+    
+    return {
+      name: interfaceName,
+      className: interfaceName,
+    };
+  });
+
+  if (discoveredModules.length > 0) {
+    console.log(`  ✓ Discovered ${discoveredModules.length} native module(s):`);
+    discoveredModules.forEach((mod) => {
+      console.log(`    - ${mod.className}`);
+    });
+  } else {
+    console.log(`  ℹ️  No native modules found (no interfaces extending TigerModule)`);
+  }
+
+  return discoveredModules;
 }

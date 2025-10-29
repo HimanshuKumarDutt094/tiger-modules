@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     id("io.github.himanshukumardutt094.tiger-autolink")
+    id("kotlin-kapt")
 }
 
 android {
@@ -73,13 +74,13 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
     // lynx dependencies
-    implementation("org.lynxsdk.lynx:lynx:3.2.0")
-    implementation("org.lynxsdk.lynx:lynx-jssdk:3.2.0")
-    implementation("org.lynxsdk.lynx:lynx-trace:3.2.0")
-    implementation("org.lynxsdk.lynx:primjs:2.12.0")
+    implementation("org.lynxsdk.lynx:lynx:3.4.0")
+    implementation("org.lynxsdk.lynx:lynx-jssdk:3.4.0")
+    implementation("org.lynxsdk.lynx:lynx-trace:3.4.0")
+    implementation("org.lynxsdk.lynx:primjs:2.14.2")
 
     // integrating image-service
-    implementation("org.lynxsdk.lynx:lynx-service-image:3.2.0")
+    implementation("org.lynxsdk.lynx:lynx-service-image:3.4.0")
 
     // image-service dependencies, if not added, images cannot be loaded; if the host APP needs to use other image libraries, you can customize the image-service and remove this dependency
     implementation("com.facebook.fresco:fresco:2.3.0")
@@ -89,18 +90,19 @@ dependencies {
     implementation("com.facebook.fresco:animated-base:2.3.0")
 
     // integrating log-service
-    implementation("org.lynxsdk.lynx:lynx-service-log:3.2.0")
+    implementation("org.lynxsdk.lynx:lynx-service-log:3.4.0")
 
     // integrating http-service
-    implementation("org.lynxsdk.lynx:lynx-service-http:3.2.0")
+    implementation("org.lynxsdk.lynx:lynx-service-http:3.4.0")
 
     implementation("com.squareup.okhttp3:okhttp:4.9.0")
 
     // add devtool's dependencies
-    debugImplementation ("org.lynxsdk.lynx:lynx-devtool:3.2.0")
-    debugImplementation ("org.lynxsdk.lynx:lynx-service-devtool:3.2.0")
+    debugImplementation ("org.lynxsdk.lynx:lynx-devtool:3.4.0")
+    debugImplementation ("org.lynxsdk.lynx:lynx-service-devtool:3.4.0")
 
     // third-party dependencies
     debugImplementation("com.squareup.retrofit2:retrofit:2.7.0")
-
+kapt('org.lynxsdk.lynx:lynx-processor:3.4.2')
+implementation("androidx.appcompat:appcompat:1.7.0")
 }

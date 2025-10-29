@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Find the CLI package root by looking for package.json with name "tiger-module"
+// Find the CLI package root by looking for package.json with name "tiger"
 function findPackageRoot(startDir: string): string {
   let currentDir = startDir;
   const root = path.parse(currentDir).root;
@@ -15,8 +15,8 @@ function findPackageRoot(startDir: string): string {
     try {
       if (fs.existsSync(packageJsonPath)) {
         const pkg = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-        // Only return if this is the tiger-module package
-        if (pkg.name === "tiger-module") {
+        // Only return if this is the tiger package
+        if (pkg.name === "tiger") {
           return currentDir;
         }
       }

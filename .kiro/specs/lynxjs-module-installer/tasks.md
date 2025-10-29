@@ -132,7 +132,7 @@
     - Ensure bridging header not duplicated
     - _Requirements: 12.3, 12.4, 12.5_
 
-- [ ] 11. Update package.json exports for tiger-module
+- [ ] 11. Update package.json exports for tiger
   - Ensure install.js is exported correctly
   - Verify moduleInstaller.ts is compiled to dist/
   - Update exports map to include "./install" path

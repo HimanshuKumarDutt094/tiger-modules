@@ -13,7 +13,7 @@ export async function initModule(
   providedProjectName?: string,
   language?: string
 ) {
-  intro(chalk.cyan("✨ Create Lynx Autolink Extension"));
+  intro(chalk.cyan("✨ Create LynxJS Extension"));
 
   let projectName = providedProjectName;
 
@@ -21,7 +21,7 @@ export async function initModule(
   if (!projectName) {
     projectName = checkCancel<string>(
       await text({
-        message: "Project name (e.g. lynxjs-linking-module):",
+        message: "Project name (e.g. lynxjs-linking):",
         validate(value) {
           if (!value) return "Project name required";
           if (!packageNameCheck(value))
@@ -33,7 +33,7 @@ export async function initModule(
     // validate provided project name
     if (!packageNameCheck(projectName)) {
       console.error(
-        "Project name must be lowercase with hyphens only (e.g. lynxjs-linking-module)"
+        "Project name must be lowercase with hyphens only (e.g. lynxjs-linking)"
       );
       process.exit(1);
     }
@@ -71,8 +71,8 @@ export async function initModule(
 
   const description = checkCancel<string>(
     await text({
-      message: "Module description:",
-      initialValue: "My Lynx native module",
+      message: "Project description:",
+      initialValue: "My Lynx native module.",
     })
   );
 
@@ -180,7 +180,7 @@ export interface ${serviceName} {
   const moduleFile = "src/module.ts";
   writeFileSync(
     path.join(dir, moduleFile),
-    `import { type TigerModule } from "tiger-module/runtime";
+    `import { type TigerModule } from "tiger/runtime";
 ${moduleInterfaces}`
   );
 
@@ -211,15 +211,15 @@ ${moduleInterfaces}`
         "./package.json": "./package.json",
       },
       scripts: {
-        build: "tiger-module build",
+        build: "tiger build",
         dev: "tsdown --watch",
         typecheck: "tsc --noEmit",
         release: "bumpp && npm publish",
-        codegen: "tiger-module codegen",
+        codegen: "tiger codegen",
       },
       devDependencies: {
         "@types/node": "^24.8.1",
-        "tiger-module": "latest",
+        "tiger": "latest",
         tsdown: "^0.15.8",
         typescript: "^5.9.3",
       },
@@ -274,7 +274,21 @@ export default defineConfig([
   );
 
   // --- tiger.config.ts (autolink configuration) ---
-  const configContent = `import { defineConfig } from 'tiger-module/config';
+  // Note: nativeModules is now optional and auto-discovered from @LynxNativeModule annotations
+  // Only include elements and services if they exist
+  const configExtensions = [];
+  if (elements.length > 0) {
+    configExtensions.push(`  elements: ${JSON.stringify(elements, null, 4)}`);
+  }
+  if (services.length > 0) {
+    configExtensions.push(`  services: ${JSON.stringify(services, null, 4)}`);
+  }
+  
+  const extensionsConfig = configExtensions.length > 0 
+    ? `,\n  dependencies: [],\n${configExtensions.join(',\n')}`
+    : '';
+
+  const configContent = `import { defineConfig } from 'tiger/config';
 
 export default defineConfig({
   name: '${projectName}',
@@ -294,11 +308,7 @@ export default defineConfig({
     web: {
       entry: 'web/src/index.ts'
     }
-  },
-  dependencies: [],
-  nativeModules: ${JSON.stringify(nativeModules, null, 4)},
-  elements: ${JSON.stringify(elements, null, 4)},
-  services: ${JSON.stringify(services, null, 4)}
+  }${extensionsConfig}
 });
 `;
 
@@ -376,10 +386,11 @@ export default defineConfig({
   const nextSteps = [
     `1. ${chalk.cyan(`cd ${projectName}`)}`,
     `2. ${chalk.cyan("Update src/module.ts with your interfaces")}`,
-    `3. ${chalk.cyan("tiger-module codegen")} - generates base classes`,
+    `3. ${chalk.cyan("tiger codegen")} - auto-discovers modules and generates base classes`,
     `4. ${chalk.cyan(
       "Implement native code that extends the generated base classes"
     )}`,
+    `   ${chalk.gray("(Use @LynxNativeModule annotation to register your module)")}`,
     ...(createExample
       ? [
           `5. ${chalk.cyan(
@@ -387,7 +398,7 @@ export default defineConfig({
           )} - test your extension`,
         ]
       : []),
-    `${createExample ? "6" : "5"}. ${chalk.cyan("tiger-module build")}`,
+    `${createExample ? "6" : "5"}. ${chalk.cyan("tiger build")}`,
     `${createExample ? "7" : "6"}. ${chalk.cyan(
       "Publish to npm - extensions will auto-integrate via Autolink!"
     )}`,

@@ -33,14 +33,41 @@ export interface WebElement {
 }
 
 /**
+ * Discovered web native module information
+ */
+export interface WebNativeModule {
+  name: string;
+  moduleName: string;
+  className: string;
+  filePath: string;
+  packageName: string;
+}
+
+/**
+ * Element configuration
+ */
+export interface ElementConfig {
+  name: string;
+  tagName?: string;
+}
+
+/**
  * Tiger configuration from tiger.config.json
  */
 export interface TigerConfig {
+  name?: string;
+  version?: string;
   platforms?: {
     android?: {
       packageName?: string;
     };
     ios?: Record<string, any>;
-    web?: Record<string, any>;
+    web?: {
+      sourceDir?: string;
+      entry?: string;
+    };
   };
+  elements?: ElementConfig[];
+  nativeModules?: Array<{ name: string; className?: string }>;
+  services?: string[];
 }

@@ -170,27 +170,79 @@ class RegistryGenerator {
     }
     
     /**
-     * Builds the setupGlobal function
+     * Builds the applyTo function (Lepo-style using LynxViewBuilder)
      */
     private fun buildSetupGlobalFunction(extensions: List<ExtensionPackage>): FunSpec {
         val contextClassName = ClassName("android.content", "Context")
+        val viewBuilderClassName = ClassName("com.lynx.tasm", "LynxViewBuilder")
         
-        return FunSpec.builder("setupGlobal")
+        return FunSpec.builder("applyTo")
             .addKdoc(
                 """
-                Registers all discovered TigerModule extensions with the application
-                Call this method in your Application.onCreate() or Activity.onCreate()
+                Registers all discovered TigerModule extensions with the LynxViewBuilder
+                Call this method when building your LynxView
                 
+                Uses KAPT-generated ExtensionProvider from each module
+                
+                @param viewBuilder The LynxViewBuilder to register extensions with
                 @param context Android application context
                 """.trimIndent()
             )
+            .addParameter("viewBuilder", viewBuilderClassName)
             .addParameter("context", contextClassName)
-            .addCode(buildSetupGlobalCode(extensions))
+            .addCode(buildLepoStyleApplyToCode(extensions))
             .build()
     }
     
     /**
-     * Builds the code block for setupGlobal function
+     * Builds Lepo-style applyTo code that registers with LynxViewBuilder
+     */
+    private fun buildLepoStyleApplyToCode(extensions: List<ExtensionPackage>): CodeBlock {
+        return buildCodeBlock {
+            addStatement("// Register behaviors (elements) from KAPT-generated ExtensionProviders")
+            
+            extensions.forEachIndexed { index, ext ->
+                val androidConfig = ext.config.platforms.android ?: return@forEachIndexed
+                val providerAlias = "ExtensionProvider${index + 1}"
+                
+                addStatement("")
+                addStatement("// From %L@%L", ext.name, ext.version)
+                
+                // Register behaviors (elements)
+                addStatement("val behaviors${index + 1} = %L.getBehaviors()", providerAlias)
+                addStatement("viewBuilder.addBehaviors(behaviors${index + 1})")
+                addStatement("%T.d(%S, %S)", ClassName("android.util", "Log"), "ExtensionRegistry", "Registered ${ext.name} behaviors")
+                
+                // Register modules with viewBuilder
+                addStatement("val modules${index + 1} = %L.getModules()", providerAlias)
+                beginControlFlow("modules${index + 1}.forEach { (name, clazz) ->")
+                beginControlFlow("try")
+                addStatement("viewBuilder.registerModule(name, clazz)")
+                addStatement("%T.d(%S, %S + name)", ClassName("android.util", "Log"), "ExtensionRegistry", "Registered module: ")
+                nextControlFlow("catch (e: %T)", ClassName("kotlin", "Exception"))
+                addStatement("%T.e(%S, %S + name + %S + e.message)", ClassName("android.util", "Log"), "ExtensionRegistry", "Failed to register module ", ": ")
+                endControlFlow()
+                endControlFlow()
+                
+                // Register services
+                addStatement("val services${index + 1} = %L.getServices()", providerAlias)
+                beginControlFlow("services${index + 1}.forEach { (interfaceClass, instance) ->")
+                beginControlFlow("try")
+                beginControlFlow("if (instance is %T)", ClassName("com.lynx.tasm.service", "IServiceProvider"))
+                addStatement("%T.inst().registerService(instance)", ClassName("com.lynx.tasm.service", "LynxServiceCenter"))
+                addStatement("%T.d(%S, %S + interfaceClass.simpleName)", ClassName("android.util", "Log"), "ExtensionRegistry", "Registered service: ")
+                endControlFlow()
+                nextControlFlow("catch (e: %T)", ClassName("kotlin", "Exception"))
+                addStatement("%T.e(%S, %S + interfaceClass.simpleName + %S + e.message)", ClassName("android.util", "Log"), "ExtensionRegistry", "Failed to register service ", ": ")
+                endControlFlow()
+                endControlFlow()
+            }
+        }
+    }
+    
+    /**
+     * OLD: Builds the code block for setupGlobal function (direct import style)
+     * Kept for reference but not used
      */
     private fun buildSetupGlobalCode(extensions: List<ExtensionPackage>): CodeBlock {
         return buildCodeBlock {
@@ -204,7 +256,7 @@ class RegistryGenerator {
                     ext.config.nativeModules.forEach { moduleConfig ->
                         val moduleClassName = ClassName(androidConfig.packageName, moduleConfig.className)
                         
-                        addStatement("// From %L: %L", ext.name, "$androidConfig.packageName.${moduleConfig.className}")
+                        addStatement("// From %L: %L.%L", ext.name, androidConfig.packageName, moduleConfig.className)
                         addStatement("// Discovered via @LynxNativeModule(name = %S)", moduleConfig.name)
                         beginControlFlow("try")
                         addStatement(
@@ -352,24 +404,16 @@ class RegistryGenerator {
         val fileBuilder = FileSpec.builder(packageName, "ExtensionRegistry")
             .addType(registryObject)
         
-        // Add imports for all extension classes
-        extensions.forEach { ext ->
-            val androidConfig = ext.config.platforms.android ?: return@forEach
+        // Lepo-style: Import ExtensionProvider from each module with aliases
+        extensions.forEachIndexed { index, ext ->
+            val androidConfig = ext.config.platforms.android ?: return@forEachIndexed
+            val providerAlias = "ExtensionProvider${index + 1}"
             
-            // Import native modules
-            ext.config.nativeModules.forEach { moduleConfig ->
-                fileBuilder.addImport(androidConfig.packageName, moduleConfig.className)
-            }
-            
-            // Import elements
-            ext.config.elements.forEach { elementConfig ->
-                fileBuilder.addImport(androidConfig.packageName, elementConfig.name)
-            }
-            
-            // Import services
-            ext.config.services.forEach { serviceName ->
-                fileBuilder.addImport(androidConfig.packageName, serviceName)
-            }
+            // Import ExtensionProvider with alias
+            fileBuilder.addAliasedImport(
+                ClassName(androidConfig.packageName, "ExtensionProvider"),
+                providerAlias
+            )
         }
         
         return fileBuilder.build()

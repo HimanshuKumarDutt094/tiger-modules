@@ -2,14 +2,14 @@
 
 ## Introduction
 
-The tiger-module system provides a complete toolkit for developing, building, and distributing native modules for the LynxJS framework. The system enables module developers to scaffold projects, generate native code from TypeScript interfaces, build distributable packages, and automatically integrate modules into host applications through a post-install mechanism. The installer component detects host project structure (Android Kotlin/Java and iOS Swift/Objective-C), copies native files to appropriate locations, and registers modules with the LynxJS runtime.
+The tiger system provides a complete toolkit for developing, building, and distributing native modules for the LynxJS framework. The system enables module developers to scaffold projects, generate native code from TypeScript interfaces, build distributable packages, and automatically integrate modules into host applications through a post-install mechanism. The installer component detects host project structure (Android Kotlin/Java and iOS Swift/Objective-C), copies native files to appropriate locations, and registers modules with the LynxJS runtime.
 
 ## Glossary
 
 - **LynxJS**: A cross-platform mobile framework that bridges JavaScript and native code
 - **Module Developer**: A developer creating a reusable native module for LynxJS
 - **Host Application**: The end-user's LynxJS application that consumes published modules
-- **CLI System**: The tiger-module command-line interface with init, codegen, and build commands
+- **CLI System**: The tiger command-line interface with init, codegen, and build commands
 - **Installer System**: The post-install script that integrates module native code into host applications
 - **Module Config**: Configuration file (module.config.ts) containing module metadata
 - **Native Registration**: The process of registering a module class with LynxEnv (Android) or LynxModule config (iOS)
@@ -26,7 +26,7 @@ The tiger-module system provides a complete toolkit for developing, building, an
 
 #### Acceptance Criteria
 
-1. WHEN THE Module_Developer executes "tiger-module init", THE CLI_System SHALL prompt for module name, Android package name, and description
+1. WHEN THE Module_Developer executes "tiger init", THE CLI_System SHALL prompt for module name, Android package name, and description
 2. WHEN THE Module_Developer provides a PascalCase module name, THE CLI_System SHALL create a directory structure with src/, android/, and ios/ folders
 3. WHEN THE CLI_System creates the scaffold, THE CLI_System SHALL generate package.json with correct exports, scripts, and dependencies
 4. WHEN THE CLI_System creates the scaffold, THE CLI_System SHALL generate module.config.ts with the provided metadata
@@ -38,7 +38,7 @@ The tiger-module system provides a complete toolkit for developing, building, an
 
 #### Acceptance Criteria
 
-1. WHEN THE Module_Developer executes "tiger-module codegen", THE CLI_System SHALL parse the TypeScript interface extending TigerModule
+1. WHEN THE Module_Developer executes "tiger codegen", THE CLI_System SHALL parse the TypeScript interface extending TigerModule
 2. WHEN THE CLI_System parses the interface, THE CLI_System SHALL extract method signatures including parameters and return types
 3. WHEN THE CLI_System extracts method signatures, THE CLI_System SHALL generate Kotlin code in android/src/main/java with correct package structure
 4. WHEN THE CLI_System extracts method signatures, THE CLI_System SHALL generate Swift code in ios/modules with LynxModule protocol conformance
@@ -50,7 +50,7 @@ The tiger-module system provides a complete toolkit for developing, building, an
 
 #### Acceptance Criteria
 
-1. WHEN THE Module_Developer executes "tiger-module build", THE CLI_System SHALL run tsdown to compile TypeScript to JavaScript
+1. WHEN THE Module_Developer executes "tiger build", THE CLI_System SHALL run tsdown to compile TypeScript to JavaScript
 2. WHEN THE CLI_System compiles TypeScript, THE CLI_System SHALL copy android/ and ios/ directories to dist/
 3. WHEN THE CLI_System copies native directories, THE CLI_System SHALL generate dist/install.js that imports the installer
 4. WHEN THE CLI_System generates install.js, THE CLI_System SHALL modify package.json to include postinstall script

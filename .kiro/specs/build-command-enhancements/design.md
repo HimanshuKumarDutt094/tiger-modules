@@ -70,7 +70,7 @@ async function copyGeneratedFolder(moduleDir: string, distDir: string): Promise<
     const files = await fs.promises.readdir(generatedSrc);
     files.forEach(file => console.log(`  • ${file}`));
   } else {
-    console.log("ℹ️  No generated/ folder found (run 'tiger-module codegen' to create)");
+    console.log("ℹ️  No generated/ folder found (run 'tiger codegen' to create)");
   }
 }
 ```

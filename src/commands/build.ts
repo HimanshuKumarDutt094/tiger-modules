@@ -61,38 +61,49 @@ function runTsdown(cwd: string) {
   console.log("tsdown compilation completed successfully");
 }
 
-
-
 async function validateExports(moduleDir: string) {
   const indexPath = path.join(moduleDir, "src", "index.ts");
-  
+
   if (!fs.existsSync(indexPath)) {
     console.log("ℹ️  No src/index.ts found, skipping export validation");
     return;
   }
-  
+
   try {
     const indexContent = await fs.promises.readFile(indexPath, "utf8");
     const generatedDir = path.join(moduleDir, "generated");
-    
+
     // Check for references to generated files
-    if (indexContent.includes("../generated/") || indexContent.includes("./generated/")) {
+    if (
+      indexContent.includes("../generated/") ||
+      indexContent.includes("./generated/")
+    ) {
       if (!fs.existsSync(generatedDir)) {
-        console.log("⚠️  src/index.ts references generated files, but generated/ folder not found");
-        console.log("   Run 'tiger-module codegen' to generate platform bindings");
+        console.log(
+          "⚠️  src/index.ts references generated files, but generated/ folder not found"
+        );
+        console.log("   Run 'tiger codegen' to generate platform bindings");
       } else {
-        console.log("✓ Export validation passed - generated files referenced and available");
+        console.log(
+          "✓ Export validation passed - generated files referenced and available"
+        );
       }
     }
-    
+
     // Basic export pattern validation
-    const hasExports = indexContent.includes("export") || indexContent.includes("export default");
+    const hasExports =
+      indexContent.includes("export") ||
+      indexContent.includes("export default");
     if (!hasExports) {
-      console.log("⚠️  No exports found in src/index.ts - consumers won't be able to import anything");
+      console.log(
+        "⚠️  No exports found in src/index.ts - consumers won't be able to import anything"
+      );
     }
-    
   } catch (err) {
-    console.warn("⚠️  Export validation failed:", err instanceof Error ? err.message : err);
+    console.warn(
+      "⚠️  Export validation failed:",
+      err instanceof Error ? err.message : err
+    );
   }
 }
 
@@ -114,8 +125,10 @@ async function copyAutolinkConfig(moduleDir: string, distDir: string) {
     }
   } catch (error) {
     throw new Error(
-      `Failed to load autolink configuration: ${error instanceof Error ? error.message : error}\n` +
-        `This tool only supports autolink extensions. Run 'tiger-module init' to create a new extension.`,
+      `Failed to load autolink configuration: ${
+        error instanceof Error ? error.message : error
+      }\n` +
+        `This tool only supports autolink extensions. Run 'tiger init' to create a new extension.`
     );
   }
 }
@@ -131,7 +144,10 @@ interface BuildSummary {
   packageSize: string;
 }
 
-async function getBuildSummary(moduleDir: string, distDir: string): Promise<BuildSummary> {
+async function getBuildSummary(
+  moduleDir: string,
+  distDir: string
+): Promise<BuildSummary> {
   const summary: BuildSummary = {
     platformFolders: {
       android: fs.existsSync(path.join(distDir, "android")),
@@ -155,10 +171,12 @@ async function getBuildSummary(moduleDir: string, distDir: string): Promise<Buil
 
   // Count total files and calculate size
   try {
-    const countFiles = async (dir: string): Promise<{ count: number; size: number }> => {
+    const countFiles = async (
+      dir: string
+    ): Promise<{ count: number; size: number }> => {
       let count = 0;
       let size = 0;
-      
+
       const entries = await fs.promises.readdir(dir, { withFileTypes: true });
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
@@ -172,20 +190,20 @@ async function getBuildSummary(moduleDir: string, distDir: string): Promise<Buil
           size += stat.size;
         }
       }
-      
+
       return { count, size };
     };
 
     const result = await countFiles(distDir);
     summary.totalFiles = result.count;
-    
+
     // Format size
     const formatSize = (bytes: number): string => {
       if (bytes < 1024) return `${bytes} B`;
       if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
       return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     };
-    
+
     summary.packageSize = formatSize(result.size);
   } catch (err) {
     // Ignore errors in size calculation
@@ -199,17 +217,170 @@ function provideBuildSummary(summary: BuildSummary) {
   console.log("📊 Build Summary:");
   console.log(`   Total files: ${summary.totalFiles}`);
   console.log(`   Package size: ${summary.packageSize}`);
-  
+
   const platforms = Object.entries(summary.platformFolders)
     .filter(([_, exists]) => exists)
     .map(([platform, _]) => platform);
-  
+
   if (platforms.length > 0) {
     console.log(`   Platforms: ${platforms.join(", ")}`);
   }
-  
+
   if (summary.generatedFiles.length > 0) {
-    console.log(`   Generated files: ${summary.generatedFiles.length} (${summary.generatedFiles.join(", ")})`);
+    console.log(
+      `   Generated files: ${
+        summary.generatedFiles.length
+      } (${summary.generatedFiles.join(", ")})`
+    );
+  }
+}
+
+async function addLynxProcessorToBuildGradle(androidDir: string) {
+  console.log("🔧 Adding lynx-processor to build.gradle.kts...");
+  
+  const buildGradlePath = path.join(androidDir, "build.gradle.kts");
+  
+  if (!fs.existsSync(buildGradlePath)) {
+    console.log("   ⚠️  build.gradle.kts not found, skipping");
+    return;
+  }
+
+  const content = await fs.promises.readFile(buildGradlePath, "utf8");
+  
+  // Check if lynx-processor is already present
+  if (content.includes('kapt("org.lynxsdk.lynx:lynx-processor:')) {
+    console.log("   ℹ️  lynx-processor already present");
+    return;
+  }
+
+  // Find the dependencies block and add lynx-processor after tiger-annotation-processor
+  const lines = content.split("\n");
+  const modifiedLines: string[] = [];
+  let modified = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    modifiedLines.push(line);
+
+    // Look for tiger-annotation-processor kapt line
+    if (
+      line.includes('kapt("io.github.himanshukumardutt094:tiger-annotation-processor:')
+    ) {
+      // Add lynx-processor on the next line with same indentation
+      const indent = line.match(/^\s*/)?.[0] || "    ";
+      modifiedLines.push("");
+      modifiedLines.push(
+        `${indent}// Lynx annotation processor - generates PropsSetter for @LynxElement and @LynxProp`
+      );
+      modifiedLines.push(`${indent}kapt("org.lynxsdk.lynx:lynx-processor:3.4.2")`);
+      modified = true;
+      console.log("   ✓ Added lynx-processor kapt dependency");
+    }
+  }
+
+  if (modified) {
+    await fs.promises.writeFile(buildGradlePath, modifiedLines.join("\n"), "utf8");
+  } else {
+    console.log("   ⚠️  Could not find tiger-annotation-processor to insert after");
+  }
+}
+
+async function addLynxMethodAnnotations(androidDir: string) {
+  console.log("🔧 Adding @LynxMethod annotations to override methods...");
+  let filesProcessed = 0;
+  let filesModified = 0;
+
+  const processKotlinFile = async (filePath: string) => {
+    const content = await fs.promises.readFile(filePath, "utf8");
+    
+    console.log(`   Checking: ${path.relative(androidDir, filePath)}`);
+    
+    // Check if this file contains a @LynxNativeModule annotation
+    const hasLynxNativeModule = content.includes("@LynxNativeModule");
+    if (!hasLynxNativeModule) {
+      console.log(`     ✗ No @LynxNativeModule found`);
+      return false; // Skip files without @LynxNativeModule
+    }
+    console.log(`     ✓ Has @LynxNativeModule`);
+    
+    // Check if the class extends a *Spec class (match anywhere in the class declaration)
+    const extendsSpec = /class\s+\w+.*:\s*\w+Spec/.test(content);
+    if (!extendsSpec) {
+      console.log(`     ✗ Does not extend *Spec class`);
+      return false; // Skip if not extending a Spec class
+    }
+    console.log(`     ✓ Extends *Spec class`);
+    
+    const lines = content.split("\n");
+    const modifiedLines: string[] = [];
+    let modified = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmed = line.trim();
+
+      // Check if this is an override method
+      if (trimmed.startsWith("override fun ")) {
+        // Check if previous non-empty line has @LynxMethod annotation
+        let hasPreviousAnnotation = false;
+        for (let j = i - 1; j >= 0; j--) {
+          const prevLine = lines[j].trim();
+          if (prevLine === "") continue; // Skip empty lines
+          
+          if (
+            prevLine.includes("@LynxMethod") ||
+            prevLine.includes("@com.lynx.jsbridge.LynxMethod")
+          ) {
+            hasPreviousAnnotation = true;
+          }
+          break; // Only check the first non-empty line above
+        }
+
+        if (!hasPreviousAnnotation) {
+          // Add @LynxMethod annotation with same indentation as the method
+          const indent = line.match(/^\s*/)?.[0] || "";
+          modifiedLines.push(`${indent}@com.lynx.jsbridge.LynxMethod`);
+          modified = true;
+        }
+      }
+
+      modifiedLines.push(line);
+    }
+
+    if (modified) {
+      await fs.promises.writeFile(filePath, modifiedLines.join("\n"), "utf8");
+      console.log(`     ✓ Added @LynxMethod annotations`);
+      filesModified++;
+      return true;
+    } else {
+      console.log(`     ℹ All override methods already have @LynxMethod`);
+    }
+
+    return false;
+  };
+
+  // Walk through all Kotlin files
+  const walkDir = async (dir: string) => {
+    const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+
+      if (entry.isDirectory()) {
+        await walkDir(fullPath);
+      } else if (entry.isFile() && entry.name.endsWith(".kt")) {
+        filesProcessed++;
+        await processKotlinFile(fullPath);
+      }
+    }
+  };
+
+  const srcDir = path.join(androidDir, "src");
+  if (fs.existsSync(srcDir)) {
+    await walkDir(srcDir);
+    console.log(`   Processed ${filesProcessed} Kotlin files, modified ${filesModified}`);
+  } else {
+    console.log(`   ⚠️  No src directory found at ${srcDir}`);
   }
 }
 
@@ -234,8 +405,9 @@ async function writeDistPackageJson(moduleDir: string, distDir: string) {
   pkg.module = "./index.js";
   pkg.types = "./index.d.ts";
 
-  // Ensure proper exports map
-  pkg.exports = pkg.exports || {};
+  // Ensure proper exports map - preserve existing exports
+  const originalExports = pkg.exports || {};
+  pkg.exports = {};
 
   // Main entry point
   pkg.exports["."] = {
@@ -244,12 +416,19 @@ async function writeDistPackageJson(moduleDir: string, distDir: string) {
     require: "./index.js",
   };
 
+  // Web platform export (if it exists in original)
+  if (originalExports["./web"]) {
+    pkg.exports["./web"] = {
+      types: "./web/web.d.ts",
+      import: "./web/web.js",
+      default: "./web/web.js",
+    };
+  }
+
   // Global types export (for TypeScript bindings)
   pkg.exports["./types"] = {
     types: "./global.d.ts",
   };
-
-  // No generated file exports - everything is in global.d.ts
 
   // Keep package.json export
   pkg.exports["./package.json"] = "./package.json";
@@ -258,7 +437,7 @@ async function writeDistPackageJson(moduleDir: string, distDir: string) {
   await fs.promises.writeFile(
     outPkg,
     JSON.stringify(pkg, null, 2) + "\n",
-    "utf8",
+    "utf8"
   );
   console.log("✓ wrote", outPkg);
   console.log("  type: autolink extension");
@@ -275,15 +454,15 @@ export async function runBuildWithActions(): Promise<void> {
   const { ActionRunner } = await import("../core/actions/action-runner.js");
   const { BuildAction } = await import("../core/actions/build-action.js");
   const { defaultLogger } = await import("../core/logger.js");
-  
+
   const action = new BuildAction();
   const context = {
     devMode: false,
-    environment: 'development' as const,
+    environment: "development" as const,
     logger: defaultLogger,
     projectRoot: process.cwd(),
   };
-  
+
   const runner = new ActionRunner(context);
   runner.addAction(action);
   await runner.run();
@@ -304,8 +483,8 @@ export default async function buildModule() {
   } catch (error) {
     throw new Error(
       `No autolink configuration found. This tool only supports autolink extensions.\n` +
-        `Run 'tiger-module init' to create a new extension.\n` +
-        `Error: ${error instanceof Error ? error.message : error}`,
+        `Run 'tiger init' to create a new extension.\n` +
+        `Error: ${error instanceof Error ? error.message : error}`
     );
   }
 
@@ -319,7 +498,7 @@ export default async function buildModule() {
   } catch (err) {
     console.warn(
       "⚠️  global.d.ts generation failed:",
-      err instanceof Error ? err.message : err,
+      err instanceof Error ? err.message : err
     );
     console.warn("   TypeScript bindings will not be available");
   }
@@ -330,10 +509,16 @@ export default async function buildModule() {
     try {
       await copyDir(androidSrc, path.join(distDir, "android"));
       console.log("✓ copied android/ -> dist/android/");
+
+      // Add @LynxMethod annotations to override methods if missing
+      await addLynxMethodAnnotations(path.join(distDir, "android"));
+
+      // Add lynx-processor to build.gradle.kts if not present
+      await addLynxProcessorToBuildGradle(path.join(distDir, "android"));
     } catch (err) {
       console.warn(
         "⚠️  android copy failed:",
-        err instanceof Error ? err.message : err,
+        err instanceof Error ? err.message : err
       );
     }
   } else {
@@ -349,7 +534,7 @@ export default async function buildModule() {
     } catch (err) {
       console.warn(
         "⚠️  ios copy failed:",
-        err instanceof Error ? err.message : err,
+        err instanceof Error ? err.message : err
       );
     }
   } else {
@@ -365,13 +550,15 @@ export default async function buildModule() {
     } catch (err) {
       console.warn(
         "⚠️  web copy failed:",
-        err instanceof Error ? err.message : err,
+        err instanceof Error ? err.message : err
       );
     }
   }
 
   // 7. Skip copying generated directory - build process generates comprehensive global.d.ts
-  console.log("ℹ️  Skipping generated/ folder - build generates comprehensive global.d.ts");
+  console.log(
+    "ℹ️  Skipping generated/ folder - build generates comprehensive global.d.ts"
+  );
 
   // 8. Validate exports and provide guidance
   await validateExports(moduleDir);
@@ -394,7 +581,7 @@ export default async function buildModule() {
   console.log("   2. Publish: npm publish");
   console.log();
   console.log(
-    "🔗 Extensions using autolink will auto-integrate via Gradle/CocoaPods plugins",
+    "🔗 Extensions using autolink will auto-integrate via Gradle/CocoaPods plugins"
   );
 }
 

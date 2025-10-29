@@ -250,7 +250,7 @@ object ExtensionRegistry {
 
 ### 4. Enhanced CLI Tool
 
-**Update `tiger-module init` command:**
+**Update `tiger init` command:**
 
 ```typescript
 // Generate tiger.config.json with structured module config

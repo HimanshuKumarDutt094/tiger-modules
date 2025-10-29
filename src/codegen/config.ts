@@ -19,16 +19,19 @@ export async function loadCodegenConfig(): Promise<CodegenConfig> {
   }
 
   // Check if we have any extension types to process
-  const hasNativeModules =
-    autolinkConfig.nativeModules && autolinkConfig.nativeModules.length > 0;
+  // Note: nativeModules can be auto-discovered from source, so it's optional
   const hasElements =
     autolinkConfig.elements && autolinkConfig.elements.length > 0;
   const hasServices =
     autolinkConfig.services && autolinkConfig.services.length > 0;
+  const hasNativeModulesConfig =
+    autolinkConfig.nativeModules && autolinkConfig.nativeModules.length > 0;
 
-  if (!hasNativeModules && !hasElements && !hasServices) {
-    throw new Error(
-      `${configFile} must have at least one of: nativeModules, elements, or services`
+  // We'll auto-discover native modules from source if not explicitly configured
+  // So we only error if there's truly nothing to process
+  if (!hasNativeModulesConfig && !hasElements && !hasServices) {
+    console.log(
+      `ℹ️  No extension types configured, will auto-discover from source files`
     );
   }
 

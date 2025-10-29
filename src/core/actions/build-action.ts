@@ -2,7 +2,7 @@ import type{ Action, ActionContext, ActionResult } from './action.js';
 import  runBuild  from '../../commands/build.js';
 
 export class BuildAction implements Action {
-  description = 'Build the tiger-module project using tsdown';
+  description = 'Build the tiger project using tsdown';
   name = 'build';
 
   async execute(context: ActionContext, _previousResult?: ActionResult): Promise<ActionResult> {

@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The tiger-module build command needs focused enhancements to complete support for the RFC-based autolink extension structure. The current build system successfully handles platform folders and basic configuration, but needs improvements for generated TypeScript files integration and export validation.
+The tiger build command needs focused enhancements to complete support for the RFC-based autolink extension structure. The current build system successfully handles platform folders and basic configuration, but needs improvements for generated TypeScript files integration and export validation.
 
 ## Glossary
 

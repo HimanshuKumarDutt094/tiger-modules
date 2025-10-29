@@ -47,7 +47,7 @@ export async function loadConfig(
 
   if (!configFile || !configPath) {
     throw new Error(
-      `No Lynx extension configuration found. Expected one of:\n${CONFIG_FILES.map((f) => `  - ${f}`).join("\n")}\n\nRun 'tiger-module init' to create a new extension.`,
+      `No Lynx extension configuration found. Expected one of:\n${CONFIG_FILES.map((f) => `  - ${f}`).join("\n")}\n\nRun 'tiger init' to create a new extension.`,
     );
   }
 

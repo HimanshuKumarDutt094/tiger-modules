@@ -3,22 +3,31 @@
  * Coordinates the entire code generation process
  */
 
-import { parseInterfaces, parseElementInterfaces } from "./parser.js";
+import { parseInterfaces, parseElementInterfaces, discoverNativeModules } from "./parser.js";
 import { loadCodegenConfig, validateConfig } from "./config.js";
 import { generateNativeModule } from "./generators/modules.js";
 import { generateElement } from "./generators/elements.js";
 import { generateService } from "./generators/services.js";
 import type { CodegenContext, MethodInfo } from "./types.js";
+import type { NativeModuleConfig } from "../autolink/config.js";
 
 export async function runCodegenOrchestrator(): Promise<void> {
   // Load and validate configuration
   const config = await loadCodegenConfig();
   validateConfig(config);
 
+  // Auto-discover native modules if not explicitly configured
+  let nativeModules: NativeModuleConfig[] = config.nativeModules;
+  if (!nativeModules || nativeModules.length === 0) {
+    nativeModules = discoverNativeModules(config.srcFile);
+  } else {
+    console.log(`📋 Using ${nativeModules.length} configured native module(s)`);
+  }
+
   // Parse TypeScript interfaces
   const interfaceMethodsMap = parseInterfaces(
     config.srcFile,
-    config.nativeModules.map((m) => m.className),
+    nativeModules.map((m) => m.className),
     config.elements.map((el) => el.name),
     config.services
   );
@@ -39,8 +48,8 @@ export async function runCodegenOrchestrator(): Promise<void> {
 
   let generatedCount = 0;
 
-  // Process Native Modules
-  for (const moduleConfig of config.nativeModules) {
+  // Process Native Modules (using discovered or configured modules)
+  for (const moduleConfig of nativeModules) {
     const { name: moduleName, className } = moduleConfig;
 
     // Find the corresponding interface by matching className or moduleName

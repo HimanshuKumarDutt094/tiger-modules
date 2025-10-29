@@ -76,8 +76,69 @@ data class ExtensionPackage(
 
 
 /**
- * Creates a Gson instance for AutolinkConfig
+ * Creates a Gson instance for AutolinkConfig with proper null handling
  */
 fun createAutolinkGson(): Gson {
-    return GsonBuilder().create()
+    return GsonBuilder()
+        .registerTypeAdapter(AutolinkConfig::class.java, AutolinkConfigDeserializer())
+        .create()
+}
+
+/**
+ * Custom deserializer that ensures null lists are converted to empty lists
+ */
+class AutolinkConfigDeserializer : JsonDeserializer<AutolinkConfig> {
+    override fun deserialize(
+        json: JsonElement,
+        typeOfT: Type,
+        context: JsonDeserializationContext
+    ): AutolinkConfig {
+        val jsonObject = json.asJsonObject
+        
+        return AutolinkConfig(
+            name = jsonObject.get("name")?.asString ?: "",
+            version = jsonObject.get("version")?.asString ?: "",
+            tigerModuleVersion = jsonObject.get("tigerModuleVersion")?.asString,
+            platforms = context.deserialize(jsonObject.get("platforms"), Platforms::class.java),
+            dependencies = deserializeStringList(jsonObject.get("dependencies")),
+            nativeModules = deserializeNativeModules(jsonObject.get("nativeModules"), context),
+            elements = deserializeElements(jsonObject.get("elements"), context),
+            services = deserializeStringList(jsonObject.get("services"))
+        )
+    }
+    
+    private fun deserializeStringList(element: JsonElement?): List<String> {
+        if (element == null || element.isJsonNull) return emptyList()
+        return try {
+            element.asJsonArray.map { it.asString }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+    
+    private fun deserializeNativeModules(
+        element: JsonElement?,
+        context: JsonDeserializationContext
+    ): List<NativeModuleConfig> {
+        if (element == null || element.isJsonNull) return emptyList()
+        return try {
+            val type = object : TypeToken<List<NativeModuleConfig>>() {}.type
+            context.deserialize(element, type) ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+    
+    private fun deserializeElements(
+        element: JsonElement?,
+        context: JsonDeserializationContext
+    ): List<ElementConfig> {
+        if (element == null || element.isJsonNull) return emptyList()
+        return try {
+            val type = object : TypeToken<List<ElementConfig>>() {}.type
+            context.deserialize(element, type) ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
 }

@@ -53,6 +53,8 @@ export interface IOSConfig {
  * Platform-specific Web configuration
  */
 export interface WebConfig {
+  /** Source directory relative to package root (default: web/src) */
+  sourceDir?: string;
   /** Entry point for web platform (default: web/src/index.ts) */
   entry?: string;
 }
@@ -76,7 +78,11 @@ export interface LynxExtConfig {
   };
   /** Extension dependencies (other autolink packages) */
   dependencies?: string[];
-  /** Native module class names exported by this extension (supports both string[] and NativeModuleConfig[]) */
+  /**
+   * Native module class names exported by this extension (OPTIONAL)
+   * If not provided, codegen will auto-discover modules from @LynxNativeModule annotations
+   * Supports both string[] and NativeModuleConfig[]
+   */
   nativeModules?: NativeModuleConfig[];
   /** Custom element configurations exported by this extension */
   elements?: ElementConfig[];
@@ -122,14 +128,13 @@ export interface ValidationResult {
   warnings: string[];
 }
 
-
 /**
  * Helper function to define Lynx extension configuration with type safety
  *
  * @example
  * ```ts
  * // tiger.config.ts
- * import { defineConfig } from 'tiger-module/config';
+ * import { defineConfig } from 'tiger/config';
  *
  * export default defineConfig({
  *   name: 'my-extension',

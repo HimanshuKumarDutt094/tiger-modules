@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This specification defines the requirements for enhancing web platform support in the tiger-module system. The goal is to provide seamless web implementations for native modules and elements that work alongside existing Android and iOS implementations, enabling developers to create cross-platform extensions that work consistently across all platforms including web browsers.
+This specification defines the requirements for enhancing web platform support in the tiger system. The goal is to provide seamless web implementations for native modules and elements that work alongside existing Android and iOS implementations, enabling developers to create cross-platform extensions that work consistently across all platforms including web browsers.
 
 ## Glossary
 
@@ -59,7 +59,7 @@ This specification defines the requirements for enhancing web platform support i
 
 #### Acceptance Criteria
 
-1. WHEN running tiger-module codegen, THE Tiger Module System SHALL generate web implementation stubs in the web/src directory
+1. WHEN running tiger codegen, THE Tiger Module System SHALL generate web implementation stubs in the web/src directory
 2. WHEN web configuration is present, THE Tiger Module System SHALL include web entry points in the build process
 3. WHEN developing web implementations, THE Tiger Module System SHALL provide the same TypeScript interfaces as native implementations
 4. WHERE web implementations exist, THE Tiger Module System SHALL validate that they implement the required interface methods

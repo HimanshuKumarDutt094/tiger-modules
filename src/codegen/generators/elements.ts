@@ -457,22 +457,20 @@ function generateWebElement(
 
   const props = properties || [];
 
-  // Convert Lynx types to appropriate web types
-  const convertToWebType = (typeText: string): string => {
-    // Replace BaseEvent with standard Event types
-    if (typeText.includes("BaseEvent")) {
-      return typeText.replace(/BaseEvent<[^>]+>/g, "Event");
-    }
-    // Replace CSSProperties with CSSStyleDeclaration or string
-    if (typeText.includes("CSSProperties")) {
-      return typeText.replace(/CSSProperties/g, "CSSStyleDeclaration");
-    }
-    return typeText;
-  };
+  // Check if we need Lynx import based on property types
+  const needsLynxImport = props.some((prop) => {
+    return prop.typeText.includes("Lynx.") || 
+           prop.typeText.includes("BaseEvent") || 
+           prop.typeText.includes("CSSProperties");
+  });
+
+  // Generate import statement if needed
+  const lynxImport = needsLynxImport ? `import * as Lynx from "@lynx-js/types";\n\n` : "";
 
   const propMethods = props
     .map((prop) => {
-      const webType = convertToWebType(prop.typeText);
+      // Keep original Lynx types intact for web - don't convert them
+      const webType = prop.typeText;
       return `  set${capitalize(prop.name)}(${prop.name}${
         prop.isOptional ? "?" : ""
       }: ${webType}): void {
@@ -484,7 +482,7 @@ function generateWebElement(
     })
     .join("\n\n");
 
-  const webElementContent = `/** @lynxelement name:${tagName} */
+  const webElementContent = `${lynxImport}/** @lynxelement name:${tagName} */
 export class ${elementName} extends HTMLElement {
   
   constructor() {

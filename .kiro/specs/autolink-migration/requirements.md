@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This specification defines the migration of the tiger-module CLI from a fragile file pattern matching approach to a robust Autolink mechanism for automatic integration of LynxJS native extensions. The goal is to eliminate manual configuration and provide seamless npm-based distribution of native modules that automatically integrate into host applications without requiring developers to modify build configurations.
+This specification defines the migration of the tiger CLI from a fragile file pattern matching approach to a robust Autolink mechanism for automatic integration of LynxJS native extensions. The goal is to eliminate manual configuration and provide seamless npm-based distribution of native modules that automatically integrate into host applications without requiring developers to modify build configurations.
 
 ## Glossary
 
@@ -13,7 +13,7 @@ This specification defines the migration of the tiger-module CLI from a fragile 
 - **Discovery_Mechanism**: The automated process of finding and cataloging Extension_Packages in a Host_Application
 - **Integration_Registry**: Generated code that registers all discovered extensions with the LynxJS runtime
 - **Configuration_File**: The tiger.config.json file that defines extension metadata and platform configurations
-- **Legacy_CLI**: The current tiger-module CLI that uses file pattern matching for integration
+- **Legacy_CLI**: The current tiger CLI that uses file pattern matching for integration
 
 ## Requirements
 

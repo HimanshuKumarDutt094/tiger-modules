@@ -2,7 +2,7 @@
 
 ## Overview
 
-This design outlines the migration of the tiger-module CLI from fragile file pattern matching to a robust Autolink mechanism. The solution introduces automatic discovery and integration of LynxJS native extensions through build system plugins, standardized package formats, and generated integration registries.
+This design outlines the migration of the tiger CLI from fragile file pattern matching to a robust Autolink mechanism. The solution introduces automatic discovery and integration of LynxJS native extensions through build system plugins, standardized package formats, and generated integration registries.
 
 The architecture follows the proven React Native autolinking approach but adapts it specifically for LynxJS's module system and build requirements.
 
@@ -13,7 +13,7 @@ The architecture follows the proven React Native autolinking approach but adapts
 ```mermaid
 graph TB
     subgraph "Extension Development"
-        A[Extension Developer] --> B[tiger-module CLI]
+        A[Extension Developer] --> B[tiger CLI]
         B --> C[Extension Package]
         C --> D[npm Registry]
     end
@@ -43,7 +43,7 @@ graph TB
 
 ### Core Components
 
-1. **Enhanced CLI Tool**: Extended tiger-module with Autolink support
+1. **Enhanced CLI Tool**: Extended tiger with Autolink support
 2. **Discovery Engine**: Scans node_modules for extension packages
 3. **Build System Plugins**: Platform-specific integration handlers
 4. **Registry Generator**: Creates platform-specific registration code
@@ -53,7 +53,7 @@ graph TB
 
 ### 1. Enhanced CLI Tool
 
-**Purpose**: Extends existing tiger-module CLI with Autolink capabilities
+**Purpose**: Extends existing tiger CLI with Autolink capabilities
 
 **Key Interfaces**:
 
@@ -84,9 +84,9 @@ interface IOSConfig {
 
 **Commands**:
 
-- `tiger-module init --autolink` - Create Autolink-compatible extension
-- `tiger-module migrate` - Convert legacy modules to Autolink format
-- `tiger-module validate` - Verify extension package structure
+- `tiger init --autolink` - Create Autolink-compatible extension
+- `tiger migrate` - Convert legacy modules to Autolink format
+- `tiger validate` - Verify extension package structure
 
 ### 2. Discovery Engine
 

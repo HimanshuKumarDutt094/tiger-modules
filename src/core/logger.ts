@@ -24,7 +24,7 @@ class DefaultLogger implements Logger {
       fs.mkdirSync(tempDir, { recursive: true });
     }
     
-    this.logFile = path.join(tempDir, `tiger-module-${Date.now()}.log`);
+    this.logFile = path.join(tempDir, `tiger-${Date.now()}.log`);
     this.logStream = fs.createWriteStream(this.logFile, { flags: 'a' });
   }
 

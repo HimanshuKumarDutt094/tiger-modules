@@ -19,6 +19,9 @@ export function generateNativeModule(
 
   console.log(`🔨 Generating Native Module: ${className}...`);
 
+  // --- Generate Android Library Configuration (RFC requirement) ---
+  generateAndroidLibraryConfig(androidPackageName);
+
   // --- Generate Android Base Class (RFC compliant) ---
   const specClassName = `${className}Spec`;
   const androidSpecFile = path.join(
@@ -133,7 +136,7 @@ ${ktMethods}
 import android.content.Context
 import ${packageName}.generated.${specClassName}
 ${bridgeImports}
-import com.tigermodule.autolink.LynxNativeModule
+import com.tigermodule.processor.LynxNativeModule
 
 /**
  * Implementation of ${className}
@@ -287,7 +290,7 @@ ${javaMethods}
 import android.content.Context;
 import ${packageName}.generated.${specClassName};
 ${bridgeImports}
-import com.tigermodule.autolink.LynxNativeModule;
+import com.tigermodule.processor.LynxNativeModule;
 
 /**
  * Implementation of ${className}
@@ -364,6 +367,96 @@ ${methods
     fs.writeFileSync(webImplFile, webImplContent);
     console.log(`  ✅ Generated Web Module implementation template: ${className}.ts`);
   }
+}
+
+function generateAndroidLibraryConfig(androidPackageName: string): void {
+  // Generate build.gradle.kts for Android library (in android folder)
+  // Each module uses KAPT to generate its own ExtensionProvider
+  const buildGradleContent = `plugins {
+    id("com.android.library")
+    id("org.jetbrains.kotlin.android")
+    kotlin("kapt")
+}
+
+android {
+    namespace = "${androidPackageName}"
+    compileSdk = 34
+
+    defaultConfig {
+        minSdk = 24
+        targetSdk = 34
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+    
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+    
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+
+    sourceSets {
+        getByName("main") {
+            java.srcDirs("src/main/kotlin")
+        }
+    }
+}
+
+dependencies {
+    // Lynx framework dependencies (these should be provided by the host app)
+    compileOnly("com.lynx:core:+")
+    compileOnly("com.lynx:tasm:+")
+    compileOnly("com.lynx:react-bridge:+")
+    
+    // Android dependencies
+    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    
+    // Tiger annotations (for @LynxNativeModule, @LynxElement, @LynxService)
+    // The app will use KAPT to process these annotations
+    implementation("io.github.himanshukumardutt094:tiger-annotation-processor:1.0.0")
+}`;
+
+  fs.writeFileSync("./android/build.gradle.kts", buildGradleContent);
+  console.log(`  ✅ Generated Android library build.gradle.kts with KAPT`);
+  console.log(`  ℹ️  KAPT will generate ExtensionProvider from @LynxNativeModule annotations`);
+
+  // Generate AndroidManifest.xml
+  const androidManifestDir = "./android/src/main";
+  fs.mkdirSync(androidManifestDir, { recursive: true });
+  
+  const androidManifestContent = `<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="${androidPackageName}">
+
+    <!-- This is a library module, no activities or permissions needed -->
+    
+</manifest>`;
+
+  fs.writeFileSync(path.join(androidManifestDir, "AndroidManifest.xml"), androidManifestContent);
+  console.log(`  ✅ Generated AndroidManifest.xml`);
+
+  // Generate consumer-rules.pro (empty but required) in android folder
+  fs.writeFileSync("./android/consumer-rules.pro", "# Add project specific ProGuard rules here.\n");
+  
+  // Generate proguard-rules.pro (empty but required) in android folder
+  fs.writeFileSync("./android/proguard-rules.pro", "# Add project specific ProGuard rules here.\n");
+  
+  console.log(`  ✅ Generated ProGuard configuration files`);
 }
 
 function generateRootTypeScriptBindings(className: string, methods: MethodInfo[]): void {

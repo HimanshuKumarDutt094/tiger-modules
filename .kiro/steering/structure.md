@@ -27,7 +27,7 @@
 
 ## Generated Module Structure
 
-When `tiger-module init` creates a new module:
+When `tiger init` creates a new module:
 
 ```
 <modulename>/

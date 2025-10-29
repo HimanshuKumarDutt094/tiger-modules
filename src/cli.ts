@@ -8,7 +8,7 @@ import { registerCreateNewCommand } from "./commands/create-new.js";
 const program = new Command();
 
 program
-  .name("tiger-module")
+  .name("tiger")
   .description("CLI for LynxJS autolink extensions")
   .version("0.1.0")
   .helpOption("-h, --help", "display help for command");

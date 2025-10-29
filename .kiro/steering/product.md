@@ -1,6 +1,6 @@
 # Product Overview
 
-**tiger-module** is a CLI tool and code generator for LynxJS native modules. It scaffolds new native modules and generates platform-specific code (TypeScript declarations, Kotlin for Android, Swift for iOS) from TypeScript interface definitions.
+**tiger** is a CLI tool and code generator for LynxJS native modules. It scaffolds new native modules and generates platform-specific code (TypeScript declarations, Kotlin for Android, Swift for iOS) from TypeScript interface definitions.
 
 ## Core Functionality
 
@@ -13,9 +13,9 @@
 
 ## Key Commands
 
-- `tiger-module init [moduleName]` - Scaffold a new module
-- `tiger-module codegen` - Generate native platform code from TypeScript interfaces
-- `tiger-module build` - Build the module
+- `tiger init [moduleName]` - Scaffold a new module
+- `tiger codegen` - Generate native platform code from TypeScript interfaces
+- `tiger build` - Build the module
 
 ## Target Users
 

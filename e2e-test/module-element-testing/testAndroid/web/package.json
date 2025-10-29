@@ -1,0 +1,27 @@
+{
+  "name": "web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "rsbuild build",
+    "dev": "rsbuild dev --open",
+    "preview": "rsbuild preview"
+  },
+  "dependencies": {
+    "@lynx-js/web-core": "^0.18.1",
+    "@lynx-js/web-elements": "^0.8.9",
+    "@lynx-js/web-platform-rsbuild-plugin": "^0.1.2",
+    "module-element-testing": "link:module-element-testing/dist",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tiger": "link:tiger"
+  },
+  "devDependencies": {
+    "@rsbuild/core": "^1.5.14",
+    "@rsbuild/plugin-react": "^1.4.1",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "typescript": "^5.9.3"
+  }
+}

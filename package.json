@@ -1,12 +1,11 @@
 {
-  "name": "tiger-module",
+  "name": "tiger",
   "version": "0.1.0",
   "description": "CLI and codegen for LynxJS native modules (scaffold + codegen)",
   "type": "module",
   "license": "MIT",
   "bin": {
-    "tiger-module": "./dist/cli.js",
-    "tiger": "./bin/run.js"
+    "tiger": "./dist/cli.js"
   },
   "files": [
     "dist"
